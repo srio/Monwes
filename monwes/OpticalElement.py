@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from Codes.Vector import Vector
-from Codes.SurfaceConic import SurfaceConic
+from monwes.Vector import Vector
+from monwes.SurfaceConic import SurfaceConic
 
 
 
@@ -145,11 +145,16 @@ class Optical_element(object):
 
     @classmethod
     def initialize_as_surface_conic_ellipsoid_from_focal_distances(cls, p, q, theta=0., alpha=0., cylindrical=0, cylangle=0.0,
-                                                     switch_convexity=0):
+                                                     switch_convexity=0, fp=None, fq=None):
         oe=Optical_element(p,q,theta,alpha)
         oe.type="Surface conical mirror"
         oe.ccc_object = SurfaceConic()
-        oe.ccc_object.set_ellipsoid_from_focal_distances(p, q, np.pi/2-theta)
+        if fp is None:
+            fp = p
+        if fq is None:
+            fq=q
+        print(fp, fq)
+        oe.ccc_object.set_ellipsoid_from_focal_distances(fp, fq, np.pi/2-theta)
         if cylindrical:
             oe.ccc_object.set_cylindrical(cylangle)
         if switch_convexity:
@@ -222,12 +227,9 @@ class Optical_element(object):
 
     def effect_of_optical_element(self,beam):
 
-        print("start")
         self.rotation_to_the_optical_element(beam)
         self.translation_to_the_optical_element(beam)
-        print(beam.z[0])
         [beam, t]=self.intersection_with_optical_element(beam)
-        print(beam.z[0])
         self.output_direction_from_optical_element(beam)
 
 
@@ -235,9 +237,7 @@ class Optical_element(object):
 
         self.rotation_to_the_screen(beam)
         self.translation_to_the_screen(beam)
-        print(np.mean(beam.y))
         if np.abs(self.q) > 1e-13:
-            print(self.type)
             self.intersection_with_the_screen(beam)
 
 
@@ -249,7 +249,6 @@ class Optical_element(object):
         elif self.type =="My hyperbolic mirror":
             [beam, t] =self._intersection_with_my_hyperbolic_mirror(beam)
 
-        #print(np.mean(t))
 
         return [beam, t]
 
@@ -427,26 +426,26 @@ class Optical_element(object):
         if self.bound != None:
 
             position_x=beam.x.copy()
-            indices = np.where(position_x < self.bound.xmin)
+            indices = np.where(position_x < self.bound.xmin - 1e-9 * 1.)
             position_x[indices] = 0.0012598731458 + 1e36
-            indices = np.where(position_x > self.bound.xmax)
+            indices = np.where(position_x > self.bound.xmax + 1e-9 * 1.)
             position_x[indices] = 0.0012598731458 + 1e36
             indices = np.where(position_x == 0.0012598731458 + 1e36)
             beam.flag[indices] = -1*counter
 
             position_y=beam.y.copy()
-            indices = np.where(position_y < self.bound.ymin)
+            indices = np.where(position_y < self.bound.ymin - 1e-9 * 1.)
             position_y[indices] = 0.0012598731458 + 1e36
-            indices = np.where(position_y > self.bound.ymax)
+            indices = np.where(position_y > self.bound.ymax + 1e-9 * 1.)
             position_y[indices] = 0.0012598731458 + 1e36
             indices = np.where(position_y == 0.0012598731458 + 1e36)
             beam.flag[indices] = -1*counter
 
 
             position_z=beam.z.copy()
-            indices = np.where(position_z < self.bound.zmin)
+            indices = np.where(position_z < self.bound.zmin - 1e-9 * 1.)
             position_z[indices] = 0.0012598731458 + 1e36
-            indices = np.where(position_z > self.bound.zmax)
+            indices = np.where(position_z > self.bound.zmax + 1e-9 * 1.)
             position_z[indices] = 0.0012598731458 + 1e36
             indices = np.where(position_z == 0.0012598731458 + 1e36)
             beam.flag[indices] = -1*counter
@@ -527,15 +526,13 @@ class Optical_element(object):
     def output_frame_wolter(self,beam):
 
         indices = np.where(beam.flag>=0)
-        print("output frame wolter indices")
-        print(indices)
 
-        tx = np.mean(beam.vx[indices])
-        ty = np.mean(beam.vy[indices])
-        tz = np.mean(beam.vz[indices])
-        #tx = beam.vx[0]
-        #ty = beam.vy[0]
-        #tz = beam.vz[0]
+        #tx = np.mean(beam.vx[indices])
+        #ty = np.mean(beam.vy[indices])
+        #tz = np.mean(beam.vz[indices])
+        tx = beam.vx[0]
+        ty = beam.vy[0]
+        tz = beam.vz[0]
         #test_ray = Vector(np.mean(beam.vx[indices]), np.mean(beam.vy[indices]), np.mean(beam.vz)[indices])
         test_ray = Vector(tx, ty, tz)
         #test_ray = Vector(beam.vx[0], beam.vy[0], beam.vz[0])
@@ -596,18 +593,162 @@ class Optical_element(object):
 
         perp.normalization()
 
-        vy = velocity.dot(test_ray)
-        vz = velocity.dot(ort)
-        vx = velocity.dot(perp)
+        print("Optical axis information")
+        print(test_ray.info())
+
+        beam.x -= np.mean(beam.x)
+        beam.y -= np.mean(beam.y)
+        beam.z -= np.mean(beam.z)
+
+
+        beam.x -= np.mean(beam.x)
+        beam.y -= np.mean(beam.y)
+        beam.z -= np.mean(beam.z)
+
+
+        t = (-test_ray.x * beam.x - test_ray.y * beam.y - test_ray.z * beam.z) / (
+                test_ray.x * beam.vx + test_ray.y * beam.vy + test_ray.z * beam.vz)
+        beam.x += beam.vx * t
+        beam.y += beam.vy * t
+        beam.z += beam.vz * t
 
         position = Vector(beam.x, beam.y, beam.z)
 
+        x = position.dot(ort)
         y = position.dot(test_ray)
-        z = position.dot(ort)
-        x = position.dot(perp)
+        z = position.dot(perp)
 
-        [beam.vx, beam.vy, beam.vz] = [vx, vy, vz]
-        [beam.x, beam.y, beam.z] = [x, y, z]
+        beam.x = x
+        beam.y = y
+        beam.z = z
+
+        velocity = Vector(beam.vx, beam.vy, beam.vz)
+
+        vx = velocity.dot(ort)
+        vy = velocity.dot(test_ray)
+        vz = velocity.dot(perp)
+
+        beam.vx = vx
+        beam.vy = vy
+        beam.vz = vz
+
+
+    def new_output_frame_montel(self,beam):
+
+        op_axis = Vector(beam.vx[0], beam.vy[0], beam.vz[0])
+        op_position = Vector(beam.x[0], beam.y[0], beam.z[0])
+        #op_axis = Vector(np.mean(beam.vx), np.mean(beam.vy), np.mean(beam.vz))
+
+        z0 = Vector(0., 0., 1.)
+
+        x1 = op_axis.vector_product(z0)
+        x1.normalization()
+
+        z1 = x1.vector_product(op_axis)
+        z1.normalization()
+
+        #beam.x -= np.mean(beam.x)
+        #beam.y -= np.mean(beam.y)
+        #beam.z -= np.mean(beam.z)
+
+        beam.x -= op_position.x
+        beam.y -= op_position.y
+        beam.z -= op_position.z
+
+        t = (-op_axis.x * beam.x - op_axis.y * beam.y - op_axis.z * beam.z) / (
+                op_axis.x * beam.vx + op_axis.y * beam.vy + op_axis.z * beam.vz)
+        beam.x += beam.vx * t
+        beam.y += beam.vy * t
+        beam.z += beam.vz * t
+
+        position = Vector(beam.x, beam.y, beam.z)
+
+        x = position.dot(x1)
+        y = position.dot(op_axis)
+        z = position.dot(z1)
+
+        beam.x = x
+        beam.y = y
+        beam.z = z
+
+        velocity = Vector(beam.vx, beam.vy, beam.vz)
+
+        vx = velocity.dot(x1)
+        vy = velocity.dot(op_axis)
+        vz = velocity.dot(z1)
+
+        beam.vx = vx
+        beam.vy = vy
+        beam.vz = vz
+
+        print(op_axis.info())
+
+
+
+    def new2_output_frame_montel(self,beam,n):
+
+        op_axis = Vector(beam.vx[0], beam.vy[0], beam.vz[0])
+        #op_axis = Vector(np.mean(beam.vx), np.mean(beam.vy), np.mean(beam.vz))
+        y = Vector(0., 1., 0.,)
+        z = Vector(0., 0., 1.)
+
+
+
+        theta12 = self.theta
+        theta12 = np.pi/2 - theta12
+
+        op_axis = op_axis.rodrigues_formula(n, theta12)
+        op_axis.rotation(theta12, 'x')
+
+        print("In the first first frame")
+        print(op_axis.info())
+
+        theta2 = np.arccos(op_axis.dot(z))
+        k = op_axis.vector_product(z)
+        w = op_axis.rodrigues_formula(axis1=k, theta=-(np.pi/2-theta2))
+        fi = np.arccos(w.dot(y))
+        w.rotation(angle=-fi, axis='z')
+
+        op_position = Vector(beam.x[0], beam.y[0], beam.z[0])
+        #op_position = Vector(np.mean(beam.x), np.mean(beam.y), np.mean(beam.z))
+
+        beam.x -= op_position.x
+        beam.y -= op_position.y
+        beam.z -= op_position.z
+
+        t = (-op_axis.x * beam.x - op_axis.y * beam.y - op_axis.z * beam.z) / (
+                op_axis.x * beam.vx + op_axis.y * beam.vy + op_axis.z * beam.vz)
+
+        beam.x += beam.vx * t
+        beam.y += beam.vy * t
+        beam.z += beam.vz * t
+
+        print("Posittionnes")
+        print(beam.x, beam.y, beam.z)
+
+        velocity = Vector(beam.vx, beam.vy, beam.vz)
+        position = Vector(beam.x, beam.y, beam.z)
+
+        velocity = velocity.rodrigues_formula(n, theta12)
+        velocity.rotation(theta12, 'x')
+        w = velocity.rodrigues_formula(axis1=k, theta=-(np.pi / 2 - theta2))
+        w.rotation(angle=-fi, axis='z')
+
+        beam.vx = w.x
+        beam.vy = w.y
+        beam.vz = w.z
+
+        position = position.rodrigues_formula(n, theta12)
+        position.rotation(theta12, 'x')
+        w = position.rodrigues_formula(axis1=k, theta=-(np.pi / 2 - theta2))
+        w.rotation(angle=-fi, axis='z')
+
+        beam.x = w.x
+        beam.y = w.y
+        beam.z = w.z
+
+
+
 
 
 
