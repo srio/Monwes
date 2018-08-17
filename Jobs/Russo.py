@@ -8,7 +8,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import Shadow
 
-main = "__paraboloid__"
+##################  Instruction #######################
+# The different possible choises are:
+#
+# main == "__ideal_lenses__"             system composed by two ideal lensen in series
+# main == "__KirkPatrickBaez__"          system composed by two kirkPatrikBaez system with parabolic mirrors
+# main == "__paraboloid__"               system composed by two paraboloid mirror with no cylindricity
+# main == "__montel__ellipsoidal__"      system composed by two montel system composed by ellipsoidal mirrors
+# main == "__montel__paraboloid__"       system composed by two montel system composed by ellipsoidal paraboloid
+#
+# The source utilized is that imported by the oasys python script equal to the one of the "Echo Spectrometer"
+
+
+
+
+
+main = "__montel__ellipsoidal__"
 theta = 88.281*np.pi/180
 
 def shadow_source():
@@ -80,31 +95,16 @@ def beam():
 
     beam.flag *= 0.
 
+
+    beam.plot_xz(0)
+    plt.title('starting beam')
+
     return beam
 
-
-def plot_montel(beam, equal_axis=1):
-    plt.figure()
-    plt.plot(beam[0].x, beam[0].z, 'r.')
-    plt.plot(beam[1].x, beam[1].z, 'b.')
-    plt.plot(beam[2].x, beam[2].z, 'g.')
-    plt.xlabel('x axis')
-    plt.ylabel('z axis')
-
-    if equal_axis == 1:
-        plt.axis('equal')
-
-    beam[2].plot_xz(0)
-
-
-    print("No reflection = %d\nOne reflection = %d\nTwo reflection = %d" %(beam[0].N, beam[1].N, beam[2].N))
 
 if main == "__ideal_lenses__":
 
     beam = beam()
-
-    beam.plot_xz(0)
-    plt.title('starting beam')
 
     ideal_lens_1 = Optical_element.initialiaze_as_ideal_lens(p=0.4, q=0.3, fx=0.4, fz=0.4)
     ideal_lens_2_04 = Optical_element.initialiaze_as_ideal_lens(p=0.3, q=0.4, fx=0.4, fz=0.4)
@@ -120,19 +120,18 @@ if main == "__ideal_lenses__":
     beam_04 = ideal_lens_2_04.trace_optical_element(beam_04)        ########### case of 0.4
     beam_1471 = ideal_lens_2_1471.trace_optical_element(beam_1471)  ########### case of 1.471
 
-    beam_04.plot_xz(0)
-    plt.title('0.4')
-    beam_1471.plot_xz(0)
-    plt.title('1.471')
+    beam_04.plot_xz()
+    plt.title('Final plot of an ideal lense with parameter = 0.4')
+    beam_1471.plot_xz()
+    plt.title('Final plot of an ideal lense with parameter = 1.471')
 
     plt.show()
+
 
 
 if main == "__KirkPatrickBaez__":
 
     beam = beam()
-    beam.plot_xz()
-    plt.title("Starting beam")
 
     comp_oe1 = CompoundOpticalElement.initialize_as_kirkpatrick_baez_parabolic(p=0.4, q=0.3, separation=0.2, theta=88.281*np.pi/180, infinity_location='q')
 
@@ -150,18 +149,18 @@ if main == "__KirkPatrickBaez__":
 
 
     beam_2_04.plot_xz()
-    plt.title("0.4")
+    plt.title('Final plot of a KirkPatrickBaez system with parameter = 0.4')
     beam_2_14.plot_xz()
-    plt.title("1.471")
+    plt.title('Final plot of a KirkPatrickBaez system with parameter = 1.471')
 
 
     plt.show()
 
+
+
 if main == "__paraboloid__":
 
     beam = beam()
-    beam.plot_xz()
-    plt.title("Starting beam")
 
     oe1 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p=0.3, q=0.4, theta=theta, infinity_location='q')
 
@@ -179,134 +178,133 @@ if main == "__paraboloid__":
 
 
     beam_2_04.plot_xz()
-    plt.title("0.4")
+    plt.title('Final plot of a paraboloid mirrors with parameter = 0.4')
     beam_2_14.plot_xz()
-    plt.title("1.471")
+    plt.title('Final plot of a paraboloid mirrors with parameter = 1.471')
 
 
     plt.show()
 
 
 
-
-if main == "__montel__":
+if main == "__montel__ellipsoidal__":
 
     beam = beam()
 
-    beam.x *= 1e6
-    beam.z *= 1e6
 
 
-    beam.plot_xz(0)
-    plt.title('starting beam')
-
-    beam.x *= 1e-6
-    beam.z *= 1e-6
-
-    xmax = 0.+1e-10
+    xmax = 0.
     xmin = -100.
     ymax = 0.3
     ymin = -0.4
     zmax = 100.
-    zmin = 0.-1e-10
+    zmin = 0.
 
     bound = BoundaryRectangle(xmax=xmax, xmin=xmin, ymax=ymax, ymin=ymin, zmax=zmax, zmin=zmin)
 
-    montel_1 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.4, q=0., theta=84. * np.pi / 180,
+    montel_1 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.4, q=0.3, theta=theta,
                                                                      bound1=bound,
-                                                                     bound2=bound, distance_of_the_screen=0.3, fp=0.4,
+                                                                     bound2=bound, fp=0.4,
                                                                      fq=10000000.)
 
-    beam_1 = montel_1.trace_montel(beam)
+    beam_1 = montel_1.trace_montel(beam)[2]
 
-    beam_1 = beam_1[2]
+    beam_1.plot_xz()
+    plt.plot(beam_1.x[0], beam_1.z[0], 'ko')
+    plt.title('Plot of a the first montel ellipsoidal system')
 
-    beam.plot_xz(0)
-    plt.plot(beam.x[0], beam.z[0], 'ko')
-    plt.title("Position After first montel")
-
-    beam.plot_xpzp(0)
-    plt.plot(beam.vx[0], beam.vz[0], 'ko')
-    plt.title("Velocity After first montel")
+    beam_1.plot_xpzp()
 
 
 
-    #######################################################################################################################
-    beam_1_04 = beam_1.duplicate()
-    beam_1_14 = beam_1.duplicate()
+    beam_2_04 = beam_1.duplicate()
+    beam_2_14 = beam_1.duplicate()
 
-    xmax = 0.
-    xmin = -100.
-    ymax = 0.4
-    ymin = -0.3
-    zmax = 100.
-    zmin = 0.
 
-    bound = BoundaryRectangle(xmax=xmax, xmin=xmin, ymax=ymax, ymin=ymin, zmax=zmax, zmin=zmin)
-
-    montel_2 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.3, q=0.4, theta=88.281 * np.pi / 180,
+    montel_2_04 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.3, q=0.4, theta=theta,
                                                                      bound1=bound, bound2=bound, fp=1000000000., fq=0.4)
 
-    beam_2_04 = montel_2.trace_montel(beam_1_04)
-
-    beam_2_04 = beam_2_04[2]
-
-    position = Vector(beam_2_04.x, beam_2_04.y, beam_2_04.z)
-    velocity = Vector(beam_2_04.vx, beam_2_04.vy, beam_2_04.vz)
-
-
-
-    beam_2_04.x *= 1e6
-    beam_2_04.z *= 1e6
-
-    beam_2_04.plot_xz(0)
-    plt.plot(beam_2_04.x[0], beam_2_04.z[0], 'ko')
-    plt.title('Position after second montel 0.4')
-
-
-    beam_2_04.x *= 1e-6
-    beam_2_04.z *= 1e-6
-
-
-    beam_2_04.plot_xpzp(0)
-    plt.plot(beam_2_04.vx[0]*1e6, beam_2_04.vz[0]*1e6, 'ko')
-    plt.title('Velocity after second montel 0.4')
-
-
-########################################################################################################################
-
-    xmax = 0.
-    xmin = -100.
-    ymax = 1.471
-    ymin = -0.3
-    zmax = 100.
-    zmin = 0.
-
-    bound = BoundaryRectangle(xmax=xmax, xmin=xmin, ymax=ymax, ymin=ymin, zmax=zmax, zmin=zmin)
-
-    montel_2 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.3, q=1.471, theta=88.281 * np.pi / 180,
+    montel_2_14 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.3, q=1.471, theta=88.281 * np.pi / 180,
                                                                      bound1=bound, bound2=bound,
                                                                      fp=1000000000., fq=1.471)
 
-    beam_2_14 = montel_2.trace_montel(beam_1)
 
-    beam_2_14 = beam_2_14[2]
-
+    beam_2_04 = montel_2_04.trace_montel(beam_2_04)[2]
 
 
-    beam_2_14.x *= 1e6
-    beam_2_14.z *= 1e6
+    beam_2_04.plot_xz()
+    plt.plot(beam_2_04.x[0], beam_2_04.z[0], 'ko')
+    plt.title('Final space plot of a montel ellipsoidal with parameter = 0.4')
+    beam_2_04.plot_xpzp()
+    plt.plot(beam_2_04.vx[0]*1e6, beam_2_04.vz[0]*1e6, 'ko')
+    plt.title('Final velocity plot of a montel ellipsoidal with parameter = 0.4')
 
-    beam_2_14.plot_xz(0)
+
+
+    beam_2_14 = montel_2_14.trace_montel(beam_2_14)[2]
+
+
+    beam_2_14.plot_xz()
     plt.plot(beam_2_14.x[0], beam_2_14.z[0], 'ko')
-    plt.title('Position after second montel 1.471')
-
-    beam_2_14.x *= 1e-6
-    beam_2_14.z *= 1e-6
-
-
-    beam_2_14.plot_xpzp(0)
+    plt.title('Final space plot of a montel ellipsoidal with parameter = 0.4')
+    beam_2_14.plot_xpzp()
     plt.plot(beam_2_14.vx[0]*1e6, beam_2_14.vz[0]*1e6, 'ko')
-    plt.title('Velocity after second montel 1.471')
+    plt.title('Final velocity plot of a montel ellipsoidal with parameter = 0.4')
+
+    plt.show()
+
+
+
+if main == "__montel__paraboloid__":
+
+    beam = beam()
+
+    print("dx at the starting beam = %g\nIn the ideal cacse at the end of the system dx = %g" %(max(beam.x)-min(beam.x),max(beam.x)-min(beam.x)*1.471/0.4))
+
+
+    xmax = 0.
+    xmin = -100.
+    ymax = 0.3
+    ymin = -0.4
+    zmax = 100.
+    zmin = 0.
+
+    bound = BoundaryRectangle(xmax=xmax, xmin=xmin, ymax=ymax, ymin=ymin, zmax=zmax, zmin=zmin)
+
+    montel_1 = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.4, q=0.3, theta=theta, bound1=bound, bound2=bound, infinity_location='q')
+
+    beam_1 = montel_1.trace_montel(beam)[2]
+
+    beam_1.plot_xz()
+    plt.plot(beam_1.x[0], beam_1.z[0], 'ko')
+    plt.title('Plot of a the first montel ellipsoidal system')
+
+    beam_1.plot_xpzp()
+
+    beam_2_04 = beam_1.duplicate()
+    beam_2_14 = beam_1.duplicate()
+
+
+    montel_2_04 = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.3, q=0.4, theta=theta, bound1=bound, bound2=bound, infinity_location='p')
+
+    montel_2_14 = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.3, q=1.471, theta=theta, bound1=bound, bound2=bound, infinity_location='p')
+
+
+    beam_2_04 = montel_2_04.trace_montel(beam_2_04)[2]
+    beam_2_14 = montel_2_14.trace_montel(beam_2_14)[2]
+
+
+    print("dx after 0.4 system = %g\n" %(max(beam_2_04.x)-min(beam_2_04.x)))
+    print("dx after 1.471 system = %g\n" %(max(beam_2_14.x)-min(beam_2_14.x)))
+
+
+    beam_2_04.plot_xz()
+    plt.plot(beam_2_04.x[0], beam_2_04.z[0], 'ko')
+    plt.title('Final plot of a montel paraboloid with parameter = 0.4')
+
+    beam_2_14.plot_xz()
+    plt.plot(beam_2_14.x[0], beam_2_14.z[0], 'ko')
+    plt.title('Final plot of a montel paraboloid with parameter = 1.471')
+
 
     plt.show()

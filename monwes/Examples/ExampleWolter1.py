@@ -1,7 +1,7 @@
-from Codes.Beam import Beam
+from monwes.Beam import Beam
 import numpy as np
 import matplotlib.pyplot as plt
-from Codes.CompoundOpticalElement import CompoundOpticalElement
+from monwes.CompoundOpticalElement import CompoundOpticalElement
 
 do_plot = True
 main = "__main__"

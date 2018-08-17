@@ -153,7 +153,6 @@ class Optical_element(object):
             fp = p
         if fq is None:
             fq=q
-        print(fp, fq)
         oe.ccc_object.set_ellipsoid_from_focal_distances(fp, fq, np.pi/2-theta)
         if cylindrical:
             oe.ccc_object.set_cylindrical(cylangle)
@@ -700,9 +699,6 @@ class Optical_element(object):
         op_axis = op_axis.rodrigues_formula(n, theta12)
         op_axis.rotation(theta12, 'x')
 
-        print("In the first first frame")
-        print(op_axis.info())
-
         theta2 = np.arccos(op_axis.dot(z))
         k = op_axis.vector_product(z)
         w = op_axis.rodrigues_formula(axis1=k, theta=-(np.pi/2-theta2))
@@ -723,8 +719,6 @@ class Optical_element(object):
         beam.y += beam.vy * t
         beam.z += beam.vz * t
 
-        print("Posittionnes")
-        print(beam.x, beam.y, beam.z)
 
         velocity = Vector(beam.vx, beam.vy, beam.vz)
         position = Vector(beam.x, beam.y, beam.z)

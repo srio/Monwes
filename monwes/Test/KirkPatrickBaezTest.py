@@ -1,9 +1,9 @@
-from Codes.Beam import Beam
+from monwes.Beam import Beam
 import unittest
-from Codes.Shape import BoundaryRectangle
+from monwes.Shape import BoundaryRectangle
 import numpy as np
 import matplotlib.pyplot as plt
-from Codes.CompoundOpticalElement import CompoundOpticalElement
+from monwes.CompoundOpticalElement import CompoundOpticalElement
 from numpy.testing import assert_almost_equal
 
 do_plot = False

@@ -1,12 +1,12 @@
-from Codes.Beam import Beam
-from Codes.OpticalElement import Optical_element
+from monwes.Beam import Beam
+from monwes.OpticalElement import Optical_element
 import matplotlib.pyplot as plt
 import unittest
 import numpy as np
 from numpy.testing import assert_almost_equal
-from Codes.Shape import *
+from monwes.Shape import *
 
-do_plot = False
+do_plot = True
 
 class IdealLensTest(unittest.TestCase):
 

@@ -1,9 +1,9 @@
-from Codes.Beam import Beam
-from Codes.Shape import BoundaryRectangle
+from monwes.Beam import Beam
+from monwes.Shape import BoundaryRectangle
 import unittest
 import numpy as np
 import matplotlib.pyplot as plt
-from Codes.CompoundOpticalElement import CompoundOpticalElement
+from monwes.CompoundOpticalElement import CompoundOpticalElement
 
 
 do_plot = True
@@ -21,7 +21,7 @@ if main == "__main__":
     theta1 = 88.8*np.pi/180
     theta2 = 89.*np.pi/180
 
-    wolter_jap = CompoundOpticalElement.wolter_for_japanese(p=p, q=q, d=d, q1=q1, theta1=theta1, theta2=theta2)
+    wolter_jap = CompoundOpticalElement.wolter_1_for_microscope(p=p, q=q, d=d, q1=q1, theta1=theta1, theta2=theta2)
 
 
     beam = Beam()
@@ -33,13 +33,16 @@ if main == "__main__":
     beam.plot_xpzp(0)
 
 
-    wolter_jap.trace_wolter_japanese(beam)
+    wolter_jap.trace_compound(beam)
 
     b2 = beam.y
     b3 = beam.z
 
     beam.y = b3
     beam.z = b2
+
+    beam.x *= 1e6
+    beam.z *= 1e6
 
     beam.plot_xz(0)
     beam.histogram()

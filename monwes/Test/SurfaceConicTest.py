@@ -1,6 +1,6 @@
-from Codes.Beam import Beam
+from monwes.Beam import Beam
 import unittest
-from Codes.OpticalElement import Optical_element
+from monwes.OpticalElement import Optical_element
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.testing import assert_almost_equal

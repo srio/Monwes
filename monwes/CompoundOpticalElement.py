@@ -254,12 +254,12 @@ class CompoundOpticalElement(object):
 
 
     @classmethod
-    def initialize_as_montel_parabolic(cls, p, q, theta, bound1, bound2, distance_of_the_screen=None, angle_of_mismatch=0.):
+    def initialize_as_montel_parabolic(cls, p, q, theta, bound1, bound2, distance_of_the_screen=None, angle_of_mismatch=0., infinity_location='p'):
 
         beta = (90. - angle_of_mismatch)*np.pi/180    #### angle beetween the two mirror, if angle_of_mismatch is >0 the two mirror are closer
 
 
-        oe1 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p=p, q=q, theta=theta, alpha=0., infinity_location='q', focal=q, cylindrical=1)
+        oe1 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p=p, q=q, theta=theta, alpha=0., infinity_location=infinity_location, focal=q, cylindrical=1)
         oe1.set_bound(bound1)
 
         oe2 = oe1.duplicate()
@@ -277,7 +277,7 @@ class CompoundOpticalElement(object):
         return CompoundOpticalElement(oe_list=[oe1, oe2, screen], oe_name="Montel parabolic")
 
     @classmethod
-    def initialize_as_montel_ellipsoid(cls, p, q, theta, bound1, bound2, distance_of_the_screen=None, angle_of_mismatch=0., fp=None, fq=None):
+    def initialize_as_montel_ellipsoid(cls, p, q, theta, bound1, bound2, angle_of_mismatch=0., fp=None, fq=None):
 
         beta = (90.- angle_of_mismatch)*np.pi/180    #### angle beetween the two mirror
 
@@ -286,18 +286,13 @@ class CompoundOpticalElement(object):
         oe1.set_bound(bound1)
 
         ccc = oe1.ccc_object.get_coefficients()
-        print("Oe1")
-        print(ccc)
 
         oe2 = oe1.duplicate()
         oe2.rotation_surface_conic(beta, 'y')
         oe2.set_bound(bound2)
 
+        distance_of_the_screen = q
 
-        if distance_of_the_screen == None:
-            distance_of_the_screen = q
-
-        print(distance_of_the_screen)
 
         ccc = np.array([0., 0., 0., 0., 0., 0., 0., 1., 0., -distance_of_the_screen])
         screen = Optical_element.initialize_as_surface_conic_from_coefficients(ccc)
@@ -403,9 +398,6 @@ class CompoundOpticalElement(object):
             print("Iteration number %d"  %(i+1))
 
             self.oe[i].effect_of_optical_element(beam)
-            print("position")
-            print(np.mean(beam.x), np.mean(beam.y), np.mean(beam.z))
-            print("velocity")
             print(np.mean(beam.vx), np.mean(beam.vy), np.mean(beam.vz))
             self.compound_specification_after_oe(i=i)
             self.oe[i].effect_of_the_screen(beam)
@@ -481,28 +473,19 @@ class CompoundOpticalElement(object):
         theta = self.oe[0].theta
         p = self.oe[0].p
 
-        op_axis = Beam(1)
-        op_axis.set_point(0., 0., 0.)
-        op_axis.set_divergences_collimated()
-
-        beam = op_axis.merge(beam)
-
-        #beam.plot_xpzp(0)
-
-        print("merge")
-        print(beam.x, beam.y, beam.z)
-        print(beam.vx, beam.vy, beam.vz)
-
         theta = np.pi / 2 - theta
 
         vector = Vector(0., 1., 0.)
         vector.rotation(-theta, 'x')
 
 
-        ny = -vector.z / np.sqrt(vector.y ** 2 + vector.z ** 2)
-        nz = vector.y / np.sqrt(vector.y ** 2 + vector.z ** 2)
+        #ny = -vector.z / np.sqrt(vector.y ** 2 + vector.z ** 2)
+        #nz = vector.y / np.sqrt(vector.y ** 2 + vector.z ** 2)
 
-        n = Vector(0, ny, nz)
+        #n = Vector(0, ny, nz)
+
+        x = Vector(1., 0., 0.)
+        n = x.vector_product(vector)
 
         vrot = vector.rodrigues_formula(n, -theta)
         vrot.normalization()
@@ -514,18 +497,11 @@ class CompoundOpticalElement(object):
         mod_position = position.modulus()
         velocity = Vector(beam.vx, beam.vy, beam.vz)
 
-        print("theta : %f" % (theta * 180 / np.pi))
-
-
-        print("\nVVVSDuigoaihduA\\sadujhahgsdl        ")
-        print(velocity.x[0], velocity.y[0], velocity.z[0])
 
         position.rotation(-theta, 'x')
         velocity.rotation(-theta, 'x')
 
 
-        print("\nVVVSDuigoaihduA\\sadujhahgsdl        sdasfdauyoqw")
-        print(velocity.x[0], velocity.y[0], velocity.z[0])
 
 
         position = position.rodrigues_formula(n, -theta)
@@ -556,9 +532,6 @@ class CompoundOpticalElement(object):
         beam.y = beam.y - vector_point.y * p
         beam.z = beam.z - vector_point.z * p
 
-
-        print("\nVVVSDuigoaihduA\\sadujhahgsdl        sdasfdauyoqw        dfsio;jd;safasd")
-        print(velocity.x[0], velocity.y[0], velocity.z[0])
 
         return [beam, n]
 
@@ -592,11 +565,15 @@ class CompoundOpticalElement(object):
 
     def trace_montel(self, beam):
 
+
+        op_axis = Beam(1)
+        op_axis.set_point(0., 0., 0.)
+        op_axis.set_divergences_collimated()
+
+        beam = op_axis.merge(beam)
+
         [beam, n] = self.rotation_traslation_montel(beam)
 
-
-        print("Before montel but in hte mirror frame the optical axis information are:"
-              "\nx: %f, y:%f, z:%f" %(beam.vx[0], beam.vy[0], beam.vz[0]))
 
         # beam.plot_xz()
 
@@ -608,10 +585,6 @@ class CompoundOpticalElement(object):
         beam2 = beam.part_of_beam(indices)
         indices = np.where(origin == 3)
         beam3 = beam.part_of_beam(indices)
-
-        # beam1.plot_xz(0)
-        # beam2.plot_xz(0)
-        # beam3.plot_xz(0)
 
         origin0 = origin
 
@@ -662,26 +635,9 @@ class CompoundOpticalElement(object):
             if beam3_list[i + 1].N != 0:
                 [beam3_list[i + 1], t] = self.oe[2].intersection_with_optical_element(beam3_list[i + 1])
 
-        #self.print_file_montel(beam1_list, beam2_list, beam3_list, origin0, origin1, origin2)
+        self.print_file_montel(beam1_list, beam2_list, beam3_list, origin0, origin1, origin2)
 
         self.oe[0].new2_output_frame_montel(beam3_list[2], n)
-        #self.oe[0].new_output_frame_montel(beam3_list[2])
-
-
-        #ax = beam3_list[2].x[0]
-        #az = beam3_list[2].z[0]
-
-        #plt.figure()
-        #plt.plot(beam3_list[0].x, beam3_list[0].z, 'r.')
-        #plt.plot(beam3_list[1].x, beam3_list[1].z, 'b.')
-        #plt.plot(beam3_list[2].x, beam3_list[2].z, 'g.')
-        #plt.plot(ax, az, 'ko')
-        #plt.xlabel('x axis')
-        #plt.ylabel('z axis')
-        #plt.title('Complete montel plot')
-
-
-        #return [beam3_list, n]
         return beam3_list
 
 

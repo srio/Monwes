@@ -1,8 +1,8 @@
-from Codes.Beam import Beam
-from Codes.Shape import BoundaryRectangle
+from monwes.Beam import Beam
+from monwes.Shape import BoundaryRectangle
 import numpy as np
 import matplotlib.pyplot as plt
-from Codes.CompoundOpticalElement import CompoundOpticalElement
+from monwes.CompoundOpticalElement import CompoundOpticalElement
 
 do_plot = True
 main = "__main__"
@@ -55,3 +55,4 @@ if main == "__main__":
     print("No reflection = %d\nOne reflection = %d\nTwo reflection = %d" %(beam03[0].N, beam03[1].N, beam03[2].N))
 
     plt.show()
+    print("Bye")

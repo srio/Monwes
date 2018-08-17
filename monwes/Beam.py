@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy import pi
-from Codes.Vector import Vector
+from monwes.Vector import Vector
 
 
 class Beam(object):
@@ -222,7 +222,7 @@ class Beam(object):
     #
     def plot_xz(self,equal_axis=1):
         plt.figure()
-        plt.plot(self.x, self.z, 'ro')
+        plt.plot(self.x, self.z, 'r.')
         plt.xlabel('x axis')
         plt.ylabel('z axis')
         if equal_axis==1:
@@ -230,7 +230,7 @@ class Beam(object):
 
     def plot_xy(self,equal_axis=1):
         plt.figure()
-        plt.plot(self.x, self.y, 'ro')
+        plt.plot(self.x, self.y, 'r.')
         plt.xlabel('x axis')
         plt.ylabel('y axis')
         if equal_axis==1:
@@ -238,7 +238,7 @@ class Beam(object):
 
     def plot_zy(self,equal_axis=1):
         plt.figure()
-        plt.plot(self.z, self.y, 'ro')
+        plt.plot(self.z, self.y, 'r.')
         plt.xlabel('z axis')
         plt.ylabel('y axis')
         if equal_axis==1:
@@ -246,7 +246,7 @@ class Beam(object):
 
     def plot_yx(self,equal_axis=1):
         plt.figure()
-        plt.plot(self.y, self.x, 'ro')
+        plt.plot(self.y, self.x, 'r.')
         plt.xlabel('y axis')
         plt.ylabel('x axis')
         if equal_axis==1:
@@ -254,7 +254,7 @@ class Beam(object):
 
     def plot_xpzp(self,equal_axis=1):
         plt.figure()
-        plt.plot(1e6*self.vx, 1e6*self.vz, 'ro')
+        plt.plot(1e6*self.vx, 1e6*self.vz, 'r.')
         plt.xlabel('xp axis [urad]')
         plt.ylabel('zp axis [urad]')
         if equal_axis==1:
@@ -262,7 +262,7 @@ class Beam(object):
 
     def plot_ypzp(self,equal_axis=1):
         plt.figure()
-        plt.plot(1e6*self.vy, 1e6*self.vz, 'ro')
+        plt.plot(1e6*self.vy, 1e6*self.vz, 'r.')
         plt.xlabel('yp axis [urad]')
         plt.ylabel('zp axis [urad]')
         if equal_axis==1:
@@ -272,7 +272,7 @@ class Beam(object):
     def plot_good_xz(self,equal_axis=1):
         plt.figure()
         indices = np.where(self.flag >= 0)
-        plt.plot(self.x[indices], self.z[indices], 'ro')
+        plt.plot(self.x[indices], self.z[indices], 'r.')
         plt.xlabel('x axis')
         plt.ylabel('z axis')
         if equal_axis==1:
@@ -281,7 +281,7 @@ class Beam(object):
     def plot_good_xy(self,equal_axis=1):
         indices = np.where(self.flag >= 0)
         plt.figure()
-        plt.plot(self.x[indices], self.y[indices], 'ro')
+        plt.plot(self.x[indices], self.y[indices], 'r.')
         plt.xlabel('x axis')
         plt.ylabel('y axis')
         if equal_axis==1:
@@ -290,7 +290,7 @@ class Beam(object):
     def plot_good_zy(self,equal_axis=1):
         indices = np.where(self.flag >= 0)
         plt.figure()
-        plt.plot(self.z[indices], self.y[indices], 'ro')
+        plt.plot(self.z[indices], self.y[indices], 'r.')
         plt.xlabel('z axis')
         plt.ylabel('y axis')
         if equal_axis==1:
@@ -299,7 +299,7 @@ class Beam(object):
     def plot_good_yx(self,equal_axis=1):
         indices = np.where(self.flag >= 0)
         plt.figure()
-        plt.plot(self.y[indices], self.x[indices], 'ro')
+        plt.plot(self.y[indices], self.x[indices], 'r.')
         plt.xlabel('y axis')
         plt.ylabel('x axis')
         if equal_axis==1:
@@ -308,12 +308,11 @@ class Beam(object):
     def plot_good_xpzp(self,equal_axis=1):
         indices = np.where(self.flag >= 0)
         plt.figure()
-        plt.plot(1e6*self.vx[indices], 1e6*self.vz[indices], 'ro')
+        plt.plot(1e6*self.vx[indices], 1e6*self.vz[indices], 'r.')
         plt.xlabel('xp axis [urad]')
         plt.ylabel('zp axis [urad]')
         if equal_axis==1:
             plt.axis('equal')
-
 
 
     def histogram(self):

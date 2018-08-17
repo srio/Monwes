@@ -1,4 +1,4 @@
-from Codes.Vector import Vector
+from monwes.Vector import Vector
 import numpy as np
 import unittest
 from numpy.testing import assert_almost_equal

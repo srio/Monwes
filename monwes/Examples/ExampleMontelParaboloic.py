@@ -1,8 +1,8 @@
-from Codes.Beam import Beam
-from Codes.Shape import BoundaryRectangle
+from monwes.Beam import Beam
+from monwes.Shape import BoundaryRectangle
 import numpy as np
 import matplotlib.pyplot as plt
-from Codes.CompoundOpticalElement import CompoundOpticalElement
+from monwes.CompoundOpticalElement import CompoundOpticalElement
 
 do_plot = True
 main = "__main__"
@@ -17,6 +17,7 @@ if main == "__main__":
     beam.set_flat_divergence(0.01, 0.01)
     beam.set_flat_divergence(1e-6, 1e-6)
 
+    beam.plot_xz(0)
 
     beam.flag *= 0
 
@@ -49,6 +50,7 @@ if main == "__main__":
     plt.axis('equal')
 
     beam03[2].plot_xz(0)
+    plt.title('final')
 
     print("No reflection = %d\nOne reflection = %d\nTwo reflection = %d" %(beam03[0].N, beam03[1].N, beam03[2].N))
     print("dx = %f" %(max(beam03[2].x)-min(beam03[2].x)))
