@@ -193,7 +193,7 @@ class CompoundOpticalElement(object):
 
 
     @classmethod
-    def initialize_as_kirkpatrick_baez(cls, p, q, separation, theta, bound1, bound2):
+    def initialize_as_kirkpatrick_baez(cls, p, q, separation, theta, bound1=None, bound2=None):
 
 
         p1 = p - 0.5 * separation
@@ -201,7 +201,7 @@ class CompoundOpticalElement(object):
         q2 = q - 0.5 * separation
         p2 = q - q2
         f1p = p1
-        f1q = p+ q - p1
+        f1q = p + q - p1
         f2q = q2
         f2p = p + q - q2
 
@@ -220,13 +220,46 @@ class CompoundOpticalElement(object):
 
         return CompoundOpticalElement(oe_list=[oe1,oe2],oe_name="Kirkpatrick Baez")
 
+
+
+    @classmethod
+    def initialize_as_kirkpatrick_baez_parabolic(cls, p, q, separation, theta, bound1=None, bound2=None, infinity_location='p'):
+
+
+        p1 = p - 0.5 * separation
+        q1 = p - p1
+        q2 = q - 0.5 * separation
+        p2 = q - q2
+        f1p = p1
+        f1q = p + q - p1
+        f2q = q2
+        f2p = p + q - q2
+
+
+        oe1 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p= f1p, q= f1q, theta= theta, alpha=0., cylindrical=1, infinity_location=infinity_location)
+        #oe1.bound = bound1
+        oe1.set_bound(bound1)
+        oe1.p = p1
+        oe1.q = q1
+
+        oe2 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p= f2p, q= f2q, theta= theta, alpha=90.*np.pi/180, cylindrical=1, infinity_location=infinity_location)
+        #oe2.bound = bound2
+        oe2.set_bound(bound2)
+        oe2.p = p2
+        oe2.q = q2
+
+        return CompoundOpticalElement(oe_list=[oe1,oe2],oe_name="Kirkpatrick Baez")
+
+
+
+
     @classmethod
     def initialize_as_montel_parabolic(cls, p, q, theta, bound1, bound2, distance_of_the_screen=None, angle_of_mismatch=0.):
 
         beta = (90. - angle_of_mismatch)*np.pi/180    #### angle beetween the two mirror, if angle_of_mismatch is >0 the two mirror are closer
 
 
-        oe1 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p=p, q=q, theta=theta, alpha=0., infinity_location='p', focal=q, cylindrical=1)
+        oe1 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p=p, q=q, theta=theta, alpha=0., infinity_location='q', focal=q, cylindrical=1)
         oe1.set_bound(bound1)
 
         oe2 = oe1.duplicate()
@@ -251,6 +284,10 @@ class CompoundOpticalElement(object):
 
         oe1 = Optical_element.initialize_as_surface_conic_ellipsoid_from_focal_distances(p=p, q=q, theta=theta, alpha=0., cylindrical=1, fp=fp, fq=fq)
         oe1.set_bound(bound1)
+
+        ccc = oe1.ccc_object.get_coefficients()
+        print("Oe1")
+        print(ccc)
 
         oe2 = oe1.duplicate()
         oe2.rotation_surface_conic(beta, 'y')
@@ -309,7 +346,9 @@ class CompoundOpticalElement(object):
 
                 q1 = z0 - np.sqrt(ah ** 2 + bh ** 2)
 
-                self.oe[i].set_parameters(theta=180.*np.pi/180, q=q1*0.)
+                print("The coordinate of the hyperbola focus is %g" %q1)
+
+                self.oe[i].set_parameters(theta=90.*np.pi/180, q=q1*0.)
 
 
 
@@ -364,6 +403,10 @@ class CompoundOpticalElement(object):
             print("Iteration number %d"  %(i+1))
 
             self.oe[i].effect_of_optical_element(beam)
+            print("position")
+            print(np.mean(beam.x), np.mean(beam.y), np.mean(beam.z))
+            print("velocity")
+            print(np.mean(beam.vx), np.mean(beam.vy), np.mean(beam.vz))
             self.compound_specification_after_oe(i=i)
             self.oe[i].effect_of_the_screen(beam)
             self.compound_specification_after_screen(beam = beam, i=i)
@@ -438,7 +481,17 @@ class CompoundOpticalElement(object):
         theta = self.oe[0].theta
         p = self.oe[0].p
 
+        op_axis = Beam(1)
+        op_axis.set_point(0., 0., 0.)
+        op_axis.set_divergences_collimated()
 
+        beam = op_axis.merge(beam)
+
+        #beam.plot_xpzp(0)
+
+        print("merge")
+        print(beam.x, beam.y, beam.z)
+        print(beam.vx, beam.vy, beam.vz)
 
         theta = np.pi / 2 - theta
 
@@ -461,12 +514,26 @@ class CompoundOpticalElement(object):
         mod_position = position.modulus()
         velocity = Vector(beam.vx, beam.vy, beam.vz)
 
+        print("theta : %f" % (theta * 180 / np.pi))
+
+
+        print("\nVVVSDuigoaihduA\\sadujhahgsdl        ")
+        print(velocity.x[0], velocity.y[0], velocity.z[0])
+
         position.rotation(-theta, 'x')
         velocity.rotation(-theta, 'x')
+
+
+        print("\nVVVSDuigoaihduA\\sadujhahgsdl        sdasfdauyoqw")
+        print(velocity.x[0], velocity.y[0], velocity.z[0])
+
 
         position = position.rodrigues_formula(n, -theta)
         velocity = velocity.rodrigues_formula(n, -theta)
         velocity.normalization()
+
+
+
 
         #position.normalization()
         position.x = position.x #* mod_position
@@ -478,6 +545,7 @@ class CompoundOpticalElement(object):
 
         ####### translation  ###################################################################################################
 
+
         vector_point = Vector(0, p, 0)
 
         vector_point.rotation(-theta,  "x")
@@ -488,7 +556,11 @@ class CompoundOpticalElement(object):
         beam.y = beam.y - vector_point.y * p
         beam.z = beam.z - vector_point.z * p
 
-        return beam
+
+        print("\nVVVSDuigoaihduA\\sadujhahgsdl        sdasfdauyoqw        dfsio;jd;safasd")
+        print(velocity.x[0], velocity.y[0], velocity.z[0])
+
+        return [beam, n]
 
 
     def time_comparison(self, beam1, elements):
@@ -520,7 +592,11 @@ class CompoundOpticalElement(object):
 
     def trace_montel(self, beam):
 
-        beam = self.rotation_traslation_montel(beam)
+        [beam, n] = self.rotation_traslation_montel(beam)
+
+
+        print("Before montel but in hte mirror frame the optical axis information are:"
+              "\nx: %f, y:%f, z:%f" %(beam.vx[0], beam.vy[0], beam.vz[0]))
 
         # beam.plot_xz()
 
@@ -586,17 +662,26 @@ class CompoundOpticalElement(object):
             if beam3_list[i + 1].N != 0:
                 [beam3_list[i + 1], t] = self.oe[2].intersection_with_optical_element(beam3_list[i + 1])
 
+        #self.print_file_montel(beam1_list, beam2_list, beam3_list, origin0, origin1, origin2)
 
-        print("Super origin")
+        self.oe[0].new2_output_frame_montel(beam3_list[2], n)
+        #self.oe[0].new_output_frame_montel(beam3_list[2])
 
-        print(origin0)
-        print(origin1)
-        print(origin2)
 
-        self.print_file_montel(beam1_list, beam2_list, beam3_list, origin0, origin1, origin2)
+        #ax = beam3_list[2].x[0]
+        #az = beam3_list[2].z[0]
 
-        #self.oe[0].output_frame_wolter(beam3_list[2])
+        #plt.figure()
+        #plt.plot(beam3_list[0].x, beam3_list[0].z, 'r.')
+        #plt.plot(beam3_list[1].x, beam3_list[1].z, 'b.')
+        #plt.plot(beam3_list[2].x, beam3_list[2].z, 'g.')
+        #plt.plot(ax, az, 'ko')
+        #plt.xlabel('x axis')
+        #plt.ylabel('z axis')
+        #plt.title('Complete montel plot')
 
+
+        #return [beam3_list, n]
         return beam3_list
 
 
@@ -662,7 +747,6 @@ class CompoundOpticalElement(object):
         y2[indices] = np.inf
         z2[indices] = np.inf
 
-        indeces_x2_none = indices
 
         x3 = np.ones(len(unos)) * 0.
         y3 = np.ones(len(unos)) * 0.
@@ -685,70 +769,7 @@ class CompoundOpticalElement(object):
         y3[indices] = np.inf
         z3[indices] = np.inf
 
-        f = open("dati.txt", "w")
 
-        f.write(
-            "Index     ons     dos     tros         x1          y1          z1        x2        y2         z2         x3         y3          z3\n")
-
-        for i in range(0, len(x3)):
-
-            # print(x2[i])
-
-            if x1[i] == np.inf:
-                a1 = "     "
-            else:
-                a1 = ""
-
-            if x2[i] == np.inf:
-                a2 = "    "
-            else:
-                a2 = ""
-
-            if x3[i] == np.inf:
-                if x2[i] != np.inf:
-                    a3 = "   "
-                else:
-                    a3 = ""
-            else:
-                a3 = ""
-
-            if i < 10:
-                f.write((
-                                    "%d           %d      %d       %d     %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s\n" % (
-                            i, unos[i], dos[i], tros[i], a1, x1[i], a1, a1, y1[i], a1, a1, z1[i], a1, a2, x2[i], a2, a2,
-                            y2[i], a2, a2, z2[i], a2, a3, x3[i], a3, a3, y3[i], a3, a3, z3[i], a3)))
-            elif i < 1e2:
-                f.write((
-                                    "%d          %d      %d       %d     %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s\n" % (
-                            i, unos[i], dos[i], tros[i], a1, x1[i], a1, a1, y1[i], a1, a1, z1[i], a1, a2, x2[i], a2, a2,
-                            y2[i], a2, a2, z2[i], a2, a3, x3[i], a3, a3, y3[i], a3, a3, z3[i], a3)))
-            elif i < 1e3:
-                f.write((
-                                    "%d         %d      %d       %d     %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s\n" % (
-                            i, unos[i], dos[i], tros[i], a1, x1[i], a1, a1, y1[i], a1, a1, z1[i], a1, a2, x2[i], a2, a2,
-                            y2[i], a2, a2, z2[i], a2, a3, x3[i], a3, a3, y3[i], a3, a3, z3[i], a3)))
-            elif i < 1e4:
-                f.write((
-                                    "%d        %d      %d       %d     %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s\n" % (
-                            i, unos[i], dos[i], tros[i], a1, x1[i], a1, a1, y1[i], a1, a1, z1[i], a1, a2, x2[i], a2, a2,
-                            y2[i], a2, a2, z2[i], a2, a3, x3[i], a3, a3, y3[i], a3, a3, z3[i], a3)))
-            elif i < 1e5:
-                f.write((
-                                    "%d       %d      %d       %d     %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s\n" % (
-                            i, unos[i], dos[i], tros[i], a1, x1[i], a1, a1, y1[i], a1, a1, z1[i], a1, a2, x2[i], a2, a2,
-                            y2[i], a2, a2, z2[i], a2, a3, x3[i], a3, a3, y3[i], a3, a3, z3[i], a3)))
-            elif i < 1e6:
-                f.write((
-                                    "%d      %d      %d       %d     %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s\n" % (
-                            i, unos[i], dos[i], tros[i], a1, x1[i], a1, a1, y1[i], a1, a1, z1[i], a1, a2, x2[i], a2, a2,
-                            y2[i], a2, a2, z2[i], a2, a3, x3[i], a3, a3, y3[i], a3, a3, z3[i], a3)))
-            elif i < 1e7:
-                f.write((
-                                    "%d     %d      %d       %d     %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s   %s%f%s\n" % (
-                            i, unos[i], dos[i], tros[i], a1, x1[i], a1, a1, y1[i], a1, a1, z1[i], a1, a2, x2[i], a2, a2,
-                            y2[i], a2, a2, z2[i], a2, a3, x3[i], a3, a3, y3[i], a3, a3, z3[i], a3)))
-
-        f.close()
 
         import h5py
 
@@ -767,18 +788,110 @@ class CompoundOpticalElement(object):
 
         f1["i"] = range(0, len(x3))
         f1["unos"] = unos
+        f1["dos"] = dos
+        f1["tros"] = tros
         f1["x1"] = x1
         f1["y1"] = y1
         f1["z1"] = z1
+        f1["x2"] = x2
+        f1["y2"] = y2
+        f1["z2"] = z2
+        f1["x3"] = x3
+        f1["y3"] = y3
         f1["z3"] = z3
         f.close()
 
-        f = h5py.File("dati.h5",'r')
-        X1 = f["montel_footprint/x1"].value
+        indices = np.where(tros==3)
+
+        index0 = indices                      #### index of all the good rays
+
+        indices2 = np.where(dos[indices]==1)
+        index2 = index0[0][indices2]         ### this are good rays that have intersect befor with oe2 and after with oe1
+        indices22 = indices2
+
+        indices2 = np.where(dos[indices]==2)
+        index1 = index0[0][indices2]         ### this are good rays that have intersect befor with oe1 and after with oe2
+        indices11 = indices2
+
+        on_do = 2*np.ones(len(index0[0]))
+        on_do[indices2] -= 1
+
+        xoe1 = np.ones(len(index0[0]))
+        yoe1 = np.ones(len(index0[0]))
+        zoe1 = np.ones(len(index0[0]))
+
+        xoe1[indices11] = x1[index1]
+        xoe1[indices22] = x2[index2]
+
+        yoe1[indices11] = y1[index1]
+        yoe1[indices22] = y2[index2]
+
+        zoe1[indices11] = z1[index1]
+        zoe1[indices22] = z2[index2]
+
+        ######################################3
+
+        xoe2 = np.ones(len(index0[0]))
+        yoe2 = np.ones(len(index0[0]))
+        zoe2 = np.ones(len(index0[0]))
+
+        xoe2[indices11] = x2[index1]
+        xoe2[indices22] = x1[index2]
+
+        yoe2[indices11] = y2[index1]
+        yoe2[indices22] = y1[index2]
+
+        zoe2[indices11] = z2[index1]
+        zoe2[indices22] = z1[index2]
+
+
+
+        f = h5py.File("dati.h5",'a')
+
+        f1 = f.create_group("montel_good_rays")
+
+        f1["index"] = index0[0]
+        f1["on_do"] = on_do
+        f1["xoe1"] = xoe1
+        f1["yoe1"] = yoe1
+        f1["yoe2"] = yoe2
+        f1["zoe2"] = zoe2
+
         f.close()
 
-        print("Hello World")
-        print(X1-x1)
+        indices1 = np.where(on_do == 1)
+        indices2 = np.where(on_do == 2)
+
+        if on_do[0] == 1:
+            axoe1 = x1[0]
+            ayoe1 = y1[0]
+            azoe2 = z2[0]
+            ayoe2 = y2[0]
+        elif on_do[0] == 2:
+            axoe1 = x2[0]
+            ayoe1 = y2[0]
+            azoe2 = z1[0]
+            ayoe2 = y1[0]
+
+
+
+        plt.figure()
+        plt.plot(yoe1[indices1], xoe1[indices1], 'r.')
+        plt.plot(yoe1[indices2], xoe1[indices2], 'b.')
+        plt.plot(ayoe1, axoe1, 'ko')
+        plt.title("footprint on oe1")
+        plt.xlabel('y')
+        plt.ylabel('x')
+
+        plt.figure()
+        plt.plot(yoe2[indices1], zoe2[indices1], 'r.')
+        plt.plot(yoe2[indices2], zoe2[indices2], 'b.')
+        plt.title("footprint on oe2")
+        plt.plot(ayoe2, azoe2, 'ko')
+        plt.xlabel('y')
+        plt.ylabel('z')
+
+
 
     def velocity_wolter_microscope(self, beam):
 
