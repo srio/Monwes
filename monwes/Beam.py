@@ -2,11 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy import pi
 from monwes.Vector import Vector
+#import h5py
 
 
 class Beam(object):
 
     def __init__(self,N=10000):
+
+        N = round(N)
 
         self.x = np.zeros(N)
         self.y = np.zeros(N)
@@ -22,7 +25,7 @@ class Beam(object):
 
         self.flag = np.zeros(N)
 
-        self.N = round(N)
+        self.N = N
 
 
     @classmethod
@@ -46,6 +49,30 @@ class Beam(object):
         [beam.x, beam.z] = [beam.x-np.mean(beam.x), beam.z-np.mean(beam.z)]
         [beam.x, beam.z] = [beam.x*0.05, beam.z*0.05]
 
+
+        return beam
+
+
+    @classmethod
+    def import_from_file(cls,filename='filename'):
+
+        filename = 'dati/Beam/' + filename + '.h5'
+        f = h5py.File(filename, 'r')
+
+        n = np.ones(1)
+        f["/N"].read_direct(n)
+
+        beam = Beam(int(n[0]))
+
+        f["/x"].read_direct(beam.x)
+        f["/y"].read_direct(beam.y)
+        f["/z"].read_direct(beam.z)
+        f["/vx"].read_direct(beam.vx)
+        f["/vy"].read_direct(beam.vy)
+        f["/vz"].read_direct(beam.vz)
+        f["/flag"].read_direct(beam.flag)
+
+        f.close()
 
         return beam
 
@@ -132,6 +159,11 @@ class Beam(object):
         self.x = r*np.cos(theta) + self.x
         self.z = r*np.sin(theta) + self.z
 
+    def set_gaussian_spot(self,dx,dz):
+        N=self.N
+        self.x = dx * (np.random.randn(N))
+        self.z = dz * (np.random.randn(N))
+
 
     def set_gaussian_divergence(self,dx,dz):                                                                      # gaussian velocity distribution
         N=self.N
@@ -216,99 +248,118 @@ class Beam(object):
             self.y *= 0.0
         else:
             self.y = self.y + t * self.vy
+
+
+
+    def save_on_file(self,filename):
+
+        filename = 'dati/Beam/' + filename +'.h5'
+        f = h5py.File(filename, 'w')
+
+        f["N"] = self.N
+        f["x"] = self.x
+        f["y"] = self.y
+        f["z"] = self.z
+        f["vx"] = self.vx
+        f["vy"] = self.vy
+        f["vz"] = self.vz
+        f["flag"] = self.flag
+
+        f.close()
+
     #
     #
     #  graphics
     #
-    def plot_xz(self,equal_axis=1):
+    def plot_xz(self,equal_axis=1, color='r', marker='.', markersize=0.2):
         plt.figure()
-        plt.plot(self.x, self.z, 'r.')
+        plt.plot(self.x, self.z,color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('x axis')
         plt.ylabel('z axis')
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_xy(self,equal_axis=1):
+    def plot_xy(self,equal_axis=1, color='r', marker='.', markersize=0.2):
         plt.figure()
-        plt.plot(self.x, self.y, 'r.')
+        plt.plot(self.x, self.y,color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('x axis')
         plt.ylabel('y axis')
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_zy(self,equal_axis=1):
+    def plot_zy(self,equal_axis=1, color='r', marker='.', markersize=0.2):
         plt.figure()
-        plt.plot(self.z, self.y, 'r.')
+        plt.plot(self.z, self.y,color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('z axis')
         plt.ylabel('y axis')
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_yx(self,equal_axis=1):
+    def plot_yx(self,equal_axis=1, color='r', marker='.', markersize=0.2):
         plt.figure()
-        plt.plot(self.y, self.x, 'r.')
+        plt.plot(self.y, self.x,color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('y axis')
         plt.ylabel('x axis')
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_xpzp(self,equal_axis=1):
+    def plot_xpzp(self,equal_axis=1, color='b', marker='.', markersize=0.2):
         plt.figure()
-        plt.plot(1e6*self.vx, 1e6*self.vz, 'r.')
+        plt.plot(1e6*self.vx, 1e6*self.vz,color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('xp axis [urad]')
         plt.ylabel('zp axis [urad]')
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_ypzp(self,equal_axis=1):
+    def plot_ypzp(self,equal_axis=1, color='b', marker='.', markersize=0.2):
         plt.figure()
-        plt.plot(1e6*self.vy, 1e6*self.vz, 'r.')
+        plt.plot(1e6*self.vy, 1e6*self.vz, color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('yp axis [urad]')
         plt.ylabel('zp axis [urad]')
         if equal_axis==1:
             plt.axis('equal')
 
 
-    def plot_good_xz(self,equal_axis=1):
+    def plot_good_xz(self,equal_axis=1, color='r', marker='.', markersize=0.2):
         plt.figure()
         indices = np.where(self.flag >= 0)
-        plt.plot(self.x[indices], self.z[indices], 'r.')
+        plt.plot(self.x[indices], self.z[indices], color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('x axis')
         plt.ylabel('z axis')
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_good_xy(self,equal_axis=1):
+    def plot_good_xy(self,equal_axis=1, color='r', marker='.', markersize=0.2):
         indices = np.where(self.flag >= 0)
         plt.figure()
-        plt.plot(self.x[indices], self.y[indices], 'r.')
+        plt.plot(self.x[indices], self.y[indices],color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('x axis')
         plt.ylabel('y axis')
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_good_zy(self,equal_axis=1):
+    def plot_good_zy(self,equal_axis=1, color='r', marker='.', markersize=0.2):
         indices = np.where(self.flag >= 0)
         plt.figure()
-        plt.plot(self.z[indices], self.y[indices], 'r.')
+        plt.plot(self.z[indices], self.y[indices], color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('z axis')
         plt.ylabel('y axis')
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_good_yx(self,equal_axis=1):
+    def plot_good_yx(self,equal_axis=1, color='r', marker='.', markersize=0.2):
         indices = np.where(self.flag >= 0)
         plt.figure()
-        plt.plot(self.y[indices], self.x[indices], 'r.')
+        plt.plot(self.y[indices], self.x[indices], color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('y axis')
         plt.ylabel('x axis')
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_good_xpzp(self,equal_axis=1):
+    def plot_good_xpzp(self,equal_axis=1, color='b', marker='.', markersize=0.2):
         indices = np.where(self.flag >= 0)
         plt.figure()
-        plt.plot(1e6*self.vx[indices], 1e6*self.vz[indices], 'r.')
+        plt.plot(1e6*self.vx[indices], 1e6*self.vz[indices], color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('xp axis [urad]')
         plt.ylabel('zp axis [urad]')
         if equal_axis==1:

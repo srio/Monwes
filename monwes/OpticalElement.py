@@ -409,7 +409,6 @@ class Optical_element(object):
 
 
 
-
         if np.abs(np.mean(t1-t_source) >= np.abs(np.mean(t2-t_source))):
             t=t1
         else:
@@ -448,6 +447,7 @@ class Optical_element(object):
             position_z[indices] = 0.0012598731458 + 1e36
             indices = np.where(position_z == 0.0012598731458 + 1e36)
             beam.flag[indices] = -1*counter
+
 
         return [beam, t]
 
@@ -687,7 +687,7 @@ class Optical_element(object):
     def new2_output_frame_montel(self,beam,n):
 
         op_axis = Vector(beam.vx[0], beam.vy[0], beam.vz[0])
-        #op_axis = Vector(np.mean(beam.vx), np.mean(beam.vy), np.mean(beam.vz))
+        op_axis = Vector(np.mean(beam.vx), np.mean(beam.vy), np.mean(beam.vz))
         y = Vector(0., 1., 0.,)
         z = Vector(0., 0., 1.)
 
@@ -727,10 +727,12 @@ class Optical_element(object):
         velocity.rotation(theta12, 'x')
         w = velocity.rodrigues_formula(axis1=k, theta=-(np.pi / 2 - theta2))
         w.rotation(angle=-fi, axis='z')
+        w.normalization()
 
         beam.vx = w.x
         beam.vy = w.y
         beam.vz = w.z
+
 
         position = position.rodrigues_formula(n, theta12)
         position.rotation(theta12, 'x')

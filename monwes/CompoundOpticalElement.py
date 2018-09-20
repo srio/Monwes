@@ -177,11 +177,11 @@ class CompoundOpticalElement(object):
         oe1.set_parameters(p=p, q=q1, theta=theta1)
         ##############   hyperbola  ####################################################################################
         p1 = q1 - d
-        ah = (p1 - q)/2
-        bh = np.sqrt(p1*q)*np.cos(theta2)
+        bh = (p1 - q)/2
+        ah = np.sqrt(p1*q)*np.cos(theta2)
         z0 = np.sqrt(ae**2-be**2) - np.sqrt(ah**2+bh**2)
 
-        print("z0 = %f" %z0)
+        print("ah = %f, bh = %f, fh = %f, z0 = %f" %(ah,bh,np.sqrt(ah**2+bh**2),z0))
 
         ccc2 = np.array([-1. / ah ** 2, -1. / ah ** 2, 1 / bh ** 2, 0., 0., 0., 0., 0., 2 * z0 / bh ** 2, z0 ** 2 / bh ** 2 - 1])
 
@@ -248,31 +248,38 @@ class CompoundOpticalElement(object):
         oe2.p = p2
         oe2.q = q2
 
+        print(oe1.ccc_object.get_coefficients())
+        print(oe2.ccc_object.get_coefficients())
+
         return CompoundOpticalElement(oe_list=[oe1,oe2],oe_name="Kirkpatrick Baez")
 
 
 
 
     @classmethod
-    def initialize_as_montel_parabolic(cls, p, q, theta, bound1, bound2, distance_of_the_screen=None, angle_of_mismatch=0., infinity_location='p'):
+    def initialize_as_montel_parabolic(cls, p, q, theta, bound1=None, bound2=None, distance_of_the_screen=None, angle_of_mismatch=0., infinity_location='q'):
 
-        beta = (90. - angle_of_mismatch)*np.pi/180    #### angle beetween the two mirror, if angle_of_mismatch is >0 the two mirror are closer
+        beta = (90. + angle_of_mismatch)*np.pi/180    #### angle beetween the two mirror, if angle_of_mismatch is <0 the two mirror are closer
+        theta_grazing = np.pi/2 - theta
 
-
-        oe1 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p=p, q=q, theta=theta, alpha=0., infinity_location=infinity_location, focal=q, cylindrical=1)
+        oe1 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p=p, q=q, theta=theta, alpha=0.*np.pi/180, infinity_location=infinity_location, focal=q, cylindrical=1.)
+        oe2 = oe1.duplicate()
         oe1.set_bound(bound1)
 
-        oe2 = oe1.duplicate()
         oe2.rotation_surface_conic(beta, 'y')
         oe2.set_bound(bound2)
+
+
+        #ccc = np.array([0., 0., 0., 0., 0., 0., 0., 0., 1., 0.])
+        #oe1 = Optical_element.initialize_as_surface_conic_from_coefficients(ccc)
+        #oe1.set_parameters(p, distance_of_the_screen, 0., 0., "Surface conical mirror")
+
 
         if distance_of_the_screen == None:
             distance_of_the_screen = q
         ccc = np.array([0., 0., 0., 0., 0., 0., 0., 1., 0., -distance_of_the_screen])
         screen = Optical_element.initialize_as_surface_conic_from_coefficients(ccc)
         screen.set_parameters(p, distance_of_the_screen, 0., 0., "Surface conical mirror")
-
-
 
         return CompoundOpticalElement(oe_list=[oe1, oe2, screen], oe_name="Montel parabolic")
 
@@ -300,6 +307,26 @@ class CompoundOpticalElement(object):
 
 
         return CompoundOpticalElement(oe_list=[oe1, oe2, screen], oe_name="Montel ellipsoid")
+
+
+    @classmethod
+    def initialize_as_new_montel_paraboloid(cls, p, q, theta, bound1=None, bound2=None, angle_of_mismatch=0., infinity_location='p'):
+
+        oe1 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p=p, q=q, theta=theta, cylindrical=1, infinity_location=infinity_location)
+        oe2 = Optical_element.initialize_as_surface_conic_paraboloid_from_focal_distances(p=p, q=q, theta=theta, cylindrical=1, infinity_location=infinity_location)
+        theta_grazing = np.pi / 2 - theta
+        oe1.rotation_surface_conic(-theta_grazing, 'x')
+        #oe2 = oe1.duplicate()
+        oe2.rotation_surface_conic(np.pi/2, 'y')
+        oe2.rotation_surface_conic(theta_grazing, 'z')
+        oe1.set_bound(bound1)
+        oe2.set_bound(bound2)
+
+        ccc = np.array([0., 0., 0., 0., 0., 0., 0., 1., 0., -10.])
+        screen = Optical_element.initialize_as_surface_conic_from_coefficients(ccc)
+        screen.set_parameters(0.4, 10., 0., 0., "Surface conical mirror")
+
+        return CompoundOpticalElement(oe_list=[oe1, oe2, screen], oe_name="Montel parabolic")
 
 
     def compound_specification_after_oe(self, i):
@@ -395,13 +422,19 @@ class CompoundOpticalElement(object):
 
         for i in range (self.oe_number()):
 
-            print("Iteration number %d"  %(i+1))
+            print("\n\nIteration number %d"  %(i+1))
 
-            self.oe[i].effect_of_optical_element(beam)
-            print(np.mean(beam.vx), np.mean(beam.vy), np.mean(beam.vz))
-            self.compound_specification_after_oe(i=i)
-            self.oe[i].effect_of_the_screen(beam)
-            self.compound_specification_after_screen(beam = beam, i=i)
+            if self.oe[i] is not None:
+
+                self.oe[i].effect_of_optical_element(beam)
+                self.compound_specification_after_oe(i=i)
+                self.oe[i].effect_of_the_screen(beam)
+                self.compound_specification_after_screen(beam = beam, i=i)
+
+                print("Position")
+                print(beam.x, beam.y, beam.z)
+                print("Velocity")
+                print(beam.vx, beam.vy, beam.vz)
 
         return beam
 
@@ -468,73 +501,251 @@ class CompoundOpticalElement(object):
 
         return beam
 
-    def rotation_traslation_montel(self, beam):
+    def new_rotation_translation(self,beam,mode=0):
 
-        theta = self.oe[0].theta
-        p = self.oe[0].p
+        if mode ==0:
+            theta = self.oe[0].theta
+            print("theta: %f" %(theta*180./np.pi))
 
-        theta = np.pi / 2 - theta
+            p = self.oe[0].p
 
-        vector = Vector(0., 1., 0.)
-        vector.rotation(-theta, 'x')
+            theta = np.pi / 2 - theta
+
+            vx = np.tan(theta)/np.sqrt(1+np.tan(theta)**2)
+
+            vector = Vector(vx, np.sqrt(1-2*vx**2), -vx)
+            alpha = np.arctan(vector.x/vector.y)
+            vector.rotation(alpha, 'z')
+            beta = np.arctan(vector.z/vector.y)
+
+            velocity = Vector(beam.vx, beam.vy, beam.vz)
+            velocity.rotation(beta, 'x')
+            velocity.rotation(-alpha, 'z')
+            position = Vector(beam.x, beam.y, beam.z)
+            position.rotation(beta, 'x')
+            position.rotation(-alpha, 'z')
+            beam.vx = velocity.x
+            beam.vy = velocity.y
+            beam.vz = velocity.z
+            beam.x = position.x - velocity.x[0] * p
+            beam.y = position.y - velocity.y[0] * p
+            beam.z = position.z - velocity.z[0] * p
+
+        if mode == 1:
+            theta = self.oe[0].theta
+            print("theta: %f" % (theta * 180. / np.pi))
+
+            p = self.oe[0].p
+
+            theta = np.pi / 2 - theta
+
+            vx = np.tan(theta) / np.sqrt(1 + 2*np.tan(theta) ** 2)
+
+            vector = Vector(vx, np.sqrt(1 - 2 * vx ** 2), -vx)
+            alpha = np.arctan(vector.x / vector.y)
+            vector.rotation(alpha, 'z')
+            beta = np.arctan(vector.z / vector.y)
+
+            velocity = Vector(beam.vx, beam.vy, beam.vz)
+            velocity.rotation(beta, 'x')
+            velocity.rotation(-alpha, 'z')
+            position = Vector(beam.x, beam.y, beam.z)
+            position.rotation(beta, 'x')
+            position.rotation(-alpha, 'z')
+            beam.vx = velocity.x
+            beam.vy = velocity.y
+            beam.vz = velocity.z
+            beam.x = position.x - velocity.x[0] * p
+            beam.y = position.y - velocity.y[0] * p
+            beam.z = position.z - velocity.z[0] * p
+
+        return beam
 
 
-        #ny = -vector.z / np.sqrt(vector.y ** 2 + vector.z ** 2)
-        #nz = vector.y / np.sqrt(vector.y ** 2 + vector.z ** 2)
+    def rotation_traslation_montel(self, beam, mode):
 
-        #n = Vector(0, ny, nz)
+        if mode == 2:
+            theta = self.oe[0].theta
+            p = self.oe[0].p
 
-        x = Vector(1., 0., 0.)
-        n = x.vector_product(vector)
+            theta = np.pi / 2 - theta
 
-        vrot = vector.rodrigues_formula(n, -theta)
-        vrot.normalization()
-
-
-        #########################################################################################################################
-
-        position = Vector(beam.x, beam.y, beam.z)
-        mod_position = position.modulus()
-        velocity = Vector(beam.vx, beam.vy, beam.vz)
+            vector = Vector(0., 1., 0.)
+            vector.rotation(-theta, 'x')
 
 
-        position.rotation(-theta, 'x')
-        velocity.rotation(-theta, 'x')
+            ##ny = -vector.z / np.sqrt(vector.y ** 2 + vector.z ** 2)
+            ##nz = vector.y / np.sqrt(vector.y ** 2 + vector.z ** 2)
+
+            ##n = Vector(0, ny, nz)
+
+            x = Vector(1., 0., 0.)
+            n = x.vector_product(vector)
+
+            vrot = vector.rodrigues_formula(n, -theta)
+            vrot.normalization()
+
+
+            ##########################################################################################################################
+
+            position = Vector(beam.x, beam.y, beam.z)
+            mod_position = position.modulus()
+            velocity = Vector(beam.vx, beam.vy, beam.vz)
+
+
+            position.rotation(-theta, 'x')
+            velocity.rotation(-theta, 'x')
+
+            print("Inside rotation translation")
+            print(np.arctan(velocity.x[0] / velocity.y[0]) * 180 / np.pi + 90., np.arctan(velocity.z[0] / velocity.y[0]) * 180 / np.pi + 90.)
+
+            n = Vector(0., 0., 1.)
+            n.rotation(-theta, 'x')
+
+            position = position.rodrigues_formula(n, -theta)
+            velocity = velocity.rodrigues_formula(n, -theta)
+            velocity.normalization()
+
+            print(np.arctan(velocity.x[0] / velocity.y[0]) * 180 / np.pi + 90., np.arctan(velocity.z[0] / velocity.y[0]) * 180 / np.pi + 90.)
 
 
 
 
-        position = position.rodrigues_formula(n, -theta)
-        velocity = velocity.rodrigues_formula(n, -theta)
-        velocity.normalization()
+            ##position.normalization()
+            position.x = position.x #* mod_position
+            position.y = position.y #* mod_position
+            position.z = position.z #* mod_position
+
+            [beam.x, beam.y, beam.z] = [position.x, position.y, position.z]
+            [beam.vx, beam.vy, beam.vz] = [velocity.x, velocity.y, velocity.z]
+
+            ######### translation  ###################################################################################################
+
+
+            vector_point = Vector(0, p, 0)
+
+            vector_point.rotation(-theta,  "x")
+            vector_point = vector_point.rodrigues_formula(n, -theta)
+            vector_point.normalization()
+
+            beam.x = beam.x - vector_point.x * p
+            beam.y = beam.y - vector_point.y * p
+            beam.z = beam.z - vector_point.z * p
+
+
+
+        if mode == 3:
+
+            theta = self.oe[0].theta
+            p = self.oe[0].p
+
+            theta = np.pi / 2 - theta
+
+            vector = Vector(0., 1., 0.)
+            vector.rotation(-theta, 'z')
+
+
+            #ny = -vector.z / np.sqrt(vector.y ** 2 + vector.z ** 2)
+            #nz = vector.y / np.sqrt(vector.y ** 2 + vector.z ** 2)
+
+            #n = Vector(0, ny, nz)
+
+            x = Vector(0., 0., 1.)
+            n = x.vector_product(vector)
+
+            vrot = vector.rodrigues_formula(n, -theta)
+            vrot.normalization()
+
+
+            #########################################################################################################################
+
+            position = Vector(beam.x, beam.y, beam.z)
+            mod_position = position.modulus()
+            velocity = Vector(beam.vx, beam.vy, beam.vz)
+
+
+            position.rotation(-theta, 'z')
+            velocity.rotation(-theta, 'z')
+
+            print("Inside rotation translation")
+            print(np.arctan(velocity.x[0] / velocity.y[0]) * 180 / np.pi + 90., np.arctan(velocity.z[0] / velocity.y[0]) * 180 / np.pi + 90.)
+
+            n = Vector(1., 0., 0.)
+            n.rotation(-theta, 'z')
+
+            position = position.rodrigues_formula(n, -theta)
+            velocity = velocity.rodrigues_formula(n, -theta)
+            velocity.normalization()
+
+            print(np.arctan(velocity.x[0] / velocity.y[0]) * 180 / np.pi + 90., np.arctan(velocity.z[0] / velocity.y[0]) * 180 / np.pi + 90.)
 
 
 
 
-        #position.normalization()
-        position.x = position.x #* mod_position
-        position.y = position.y #* mod_position
-        position.z = position.z #* mod_position
+            #position.normalization()
+            position.x = position.x #* mod_position
+            position.y = position.y #* mod_position
+            position.z = position.z #* mod_position
 
-        [beam.x, beam.y, beam.z] = [position.x, position.y, position.z]
-        [beam.vx, beam.vy, beam.vz] = [velocity.x, velocity.y, velocity.z]
+            [beam.x, beam.y, beam.z] = [position.x, position.y, position.z]
+            [beam.vx, beam.vy, beam.vz] = [velocity.x, velocity.y, velocity.z]
 
-        ####### translation  ###################################################################################################
+            ######## translation  ###################################################################################################
 
 
-        vector_point = Vector(0, p, 0)
+            vector_point = Vector(0, p, 0)
 
-        vector_point.rotation(-theta,  "x")
-        vector_point = vector_point.rodrigues_formula(n, -theta)
-        vector_point.normalization()
+            vector_point.rotation(-theta,  "z")
+            vector_point = vector_point.rodrigues_formula(n, -theta)
+            vector_point.normalization()
 
-        beam.x = beam.x - vector_point.x * p
-        beam.y = beam.y - vector_point.y * p
-        beam.z = beam.z - vector_point.z * p
+            beam.x = beam.x - vector_point.x * p
+            beam.y = beam.y - vector_point.y * p
+            beam.z = beam.z - vector_point.z * p
 
 
         return [beam, n]
 
+    def new_old_rotation_translation_montel(self,beam):
+
+        theta = self.oe[0].theta
+        p = self.oe[0].p
+
+        print(theta*180/np.pi)
+
+        theta = np.pi / 2 - theta
+
+        n = Vector(0., 0., 1.)
+        n.rotation(-theta, 'x')
+
+        velocity = Vector(beam.vx, beam.vy, beam.vz)
+        position = Vector(beam.x, beam.y, beam.z)
+
+        print(velocity.x[0], velocity.y[0], velocity.z[0])
+
+        velocity.rotation(-theta, 'x')
+        position.rotation(-theta, 'x')
+
+        print(velocity.x[0], velocity.y[0], velocity.z[0])
+
+        velocity = velocity.rodrigues_formula(n, -theta)
+        position = position.rodrigues_formula(n, -theta)
+
+        print(velocity.x[0], velocity.y[0], velocity.z[0])
+
+        point = Vector(0., 1., 0.)
+        point.rotation(-theta, 'x')
+        point = point.rodrigues_formula(n, -theta)
+
+
+        beam.x = position.x - point.x
+        beam.y = position.y - point.y
+        beam.z = position.z - point.z
+        beam.vx = velocity.x
+        beam.vy = velocity.y
+        beam.vz = velocity.z
+
+        return beam, n
 
     def time_comparison(self, beam1, elements):
 
@@ -563,7 +774,7 @@ class CompoundOpticalElement(object):
 
         return origin
 
-    def trace_montel(self, beam):
+    def trace_montel(self, beam, f=None, mode=0):
 
 
         op_axis = Beam(1)
@@ -572,13 +783,27 @@ class CompoundOpticalElement(object):
 
         beam = op_axis.merge(beam)
 
-        [beam, n] = self.rotation_traslation_montel(beam)
+        if mode == 0 or mode == 1:
+            beam = self.new_rotation_translation(beam, mode=mode)
+        if mode ==2 or mode ==3:
+            [beam, n] = self.rotation_traslation_montel(beam, mode=mode)
+        #[beam, n] = self.new_old_rotation_translation_montel(beam)
 
 
-        # beam.plot_xz()
+        #-0.0122422611421 -0.350572490821 0.0122497233426
+        #-0.0122497233426 -0.350572490821 0.0122422611421
+
+        print(beam.N)
+
+        print("After rotation + translation")
+        print(beam.x[0], beam.y[0], beam.z[0])
+        print(beam.vx[0], beam.vy[0], beam.vz[0])
+        print(np.arctan(beam.vx[0] / np.sqrt(beam.vy[0]**2+beam.vz[0]**2)) * 180 / np.pi - 90., 90. + np.arctan(beam.vz[0] / np.sqrt(beam.vy[0]**2+beam.vx[0]**2)) * 180 / np.pi)
+        print(np.arctan(beam.vx[0] / np.sqrt(beam.vy[0]**2)) * 180 / np.pi - 90., 90. + np.arctan(beam.vz[0] / np.sqrt(beam.vy[0]**2)) * 180 / np.pi)
+        print("End after rot + tras")
+        print('\n')
 
         origin = self.time_comparison(beam, elements=[1, 2, 3])
-
         indices = np.where(origin == 1)
         beam1 = beam.part_of_beam(indices)
         indices = np.where(origin == 2)
@@ -600,6 +825,8 @@ class CompoundOpticalElement(object):
         origin1 = [1,2]
         origin2 = [1,2]
 
+        print("First iteration")
+        print()
 
         for i in range(0, 2):
 
@@ -620,6 +847,7 @@ class CompoundOpticalElement(object):
             if beam2_list[i].N != 0:
                 [beam2_list[i], t] = self.oe[1].intersection_with_optical_element(beam2_list[i])
                 self.oe[1].output_direction_from_optical_element(beam2_list[i])
+
                 origin = self.time_comparison(beam2_list[i], [1, 3])
                 origin2[i] = origin
                 indices = np.where(origin == 1)
@@ -632,16 +860,155 @@ class CompoundOpticalElement(object):
 
 
             beam3_list[i + 1] = beam003.merge(beam03)
-            if beam3_list[i + 1].N != 0:
-                [beam3_list[i + 1], t] = self.oe[2].intersection_with_optical_element(beam3_list[i + 1])
+            #if beam3_list[i + 1].N != 0:
+            #    [beam3_list[i + 1], t] = self.oe[2].intersection_with_optical_element(beam3_list[i + 1])
 
-        self.print_file_montel(beam1_list, beam2_list, beam3_list, origin0, origin1, origin2)
+        #self.print_file_montel(beam1_list, beam2_list, beam3_list, origin0, origin1, origin2, f)
 
-        self.oe[0].new2_output_frame_montel(beam3_list[2], n)
+            #beam_a = beam1_list[2].merge(beam2_list[2])
+            #beam3_list[2] = beam3_list[2].merge(beam_a)
+
+        print("To understand the reflection")
+        print(beam1_list[0].N, beam1_list[1].N, beam1_list[2].N)
+        print(beam2_list[0].N, beam2_list[1].N, beam2_list[2].N)
+        print(beam3_list[0].N, beam3_list[1].N, beam3_list[2].N)
+
+
+
+        if mode == 2 or mode == 3:
+            self.oe[0].new2_output_frame_montel(beam3_list[2], n)
+            beam3_list[2].retrace(self.oe[0].q)
+
+
+
+        #position = Vector(beam3_list[2].vx, beam3_list[2].vy, beam3_list[2].vz)
+        #position.rotation(np.arctan(np.mean(velocity.x) / np.mean(velocity.y)), 'z')
+        #position.rotation(-np.arctan(np.mean(velocity.z) / np.mean(velocity.y)), 'x')
+        #print(np.mean(velocity.x), np.mean(velocity.y), np.mean(velocity.z))
+
+        #beam3_list[2].x = position.x
+        #beam3_list[2].y = position.y
+        #beam3_list[2].z = position.z
+
+        if mode ==0 or mode ==1:
+            self.out_special_angle(beam3_list[2], mode)
+
         return beam3_list
+        #return [beam1_list, beam2_list, beam3_list]
 
 
-    def print_file_montel(self,beam_1, beam_2, beam_3, origin0, origin1, origin2):
+    def new_output_frame(self,beam):
+
+        theta_grazing = np.pi / 2 - self.oe[0].theta
+
+        y1 = Vector(beam.vx * 0., beam.vy, beam.vz)
+        y1.normalization()
+
+        y2 = Vector(beam.vx, beam.vy, beam.vz * 0.)
+        y2.normalization()
+
+        y1.rotation(-theta_grazing, 'x')
+        y2.rotation(-theta_grazing, 'z')
+        print(y2.x[0], y2.y[0], y2.z[0])
+        y3 = Vector(y2.x, y1.y, y1.z)
+        y3.normalization()
+
+        beam.vx = y3.x
+        beam.vy = y3.y
+        beam.vz = y3.z
+
+        y0 = Vector(beam.x.copy(), beam.y.copy(), beam.z.copy())
+        mod_pos = y0.modulus()
+
+        y1 = Vector(beam.x * 0., beam.y, beam.z)
+        y1.normalization()
+        y2 = Vector(beam.x, beam.y, beam.z * 0.)
+        y2.normalization()
+
+        y1.rotation(-theta_grazing, 'x')
+        #y2.rotation(-theta_grazing, 'z')
+        y2.rotation(theta_grazing, 'z')
+        y3 = Vector(y2.x, y1.y, y1.z)
+
+        beam.x = y3.x * mod_pos
+        beam.y = y3.y * mod_pos
+        beam.z = y3.z * mod_pos
+
+        return beam
+
+
+
+    def out_special_angle(self, beam, mode):
+
+        if mode == 0:
+            theta = self.oe[0].theta
+            print(theta*180/np.pi)
+            theta_grazing = np.pi / 2 - theta
+
+            vx = np.tan(theta_grazing) / np.sqrt(1 + np.tan(theta_grazing) ** 2)
+
+            v = Vector(vx, np.sqrt(1 - 2 * vx ** 2), vx)
+
+            beta = np.arctan(v.z / v.y)
+            v.rotation(-beta, 'x')
+            alpha = np.arctan(v.x / v.y)
+            v.rotation(alpha, 'z')
+
+            velocity = Vector(beam.vx, beam.vy, beam.vz)
+            velocity.rotation(-beta, 'x')
+            velocity.rotation(-alpha, 'z')
+
+            beam.vx = velocity.x
+            beam.vy = velocity.y
+            beam.vz = velocity.z
+
+            position = Vector(beam.x, beam.y, beam.z)
+            position.rotation(-beta, 'x')
+            position.rotation(-alpha, 'z')
+
+            beam.x = position.x
+            beam.y = position.y
+            beam.z = position.z
+
+            beam.retrace(self.oe[0].q)
+
+
+        if mode == 1:
+            theta = self.oe[0].theta
+            print(theta * 180 / np.pi)
+            theta_grazing = np.pi / 2 - theta
+
+            vx = np.tan(theta_grazing) / np.sqrt(1 + 2*np.tan(theta_grazing) ** 2)
+
+            v = Vector(vx, np.sqrt(1 - 2 * vx ** 2), vx)
+
+            beta = np.arctan(v.z / v.y)
+            v.rotation(-beta, 'x')
+            alpha = np.arctan(v.x / v.y)
+            v.rotation(alpha, 'z')
+
+            velocity = Vector(beam.vx, beam.vy, beam.vz)
+            velocity.rotation(-beta, 'x')
+            velocity.rotation(-alpha, 'z')
+
+            beam.vx = velocity.x
+            beam.vy = velocity.y
+            beam.vz = velocity.z
+
+            position = Vector(beam.x, beam.y, beam.z)
+            position.rotation(-beta, 'x')
+            position.rotation(-alpha, 'z')
+
+            beam.x = position.x
+            beam.y = position.y
+            beam.z = position.z
+
+            beam.retrace(self.oe[0].q)
+
+
+
+
+    def print_file_montel(self,beam_1, beam_2, beam_3, origin0, origin1, origin2, f):
 
         unos = origin0
 
@@ -729,18 +1096,24 @@ class CompoundOpticalElement(object):
 
         import h5py
 
-        f = h5py.File("dati.h5",'w')
+        #f = h5py.File("dati.h5",'w')
 
-        f.attrs['NX_class'] = 'NXentry'
-        f.attrs['default'] = 'montel_footprint'
+        #f.attrs['NX_class'] = 'NXentry'
+        #f.attrs['default'] = 'montel_footprint'
 
+        #f = h5py.File(date, 'a')
+
+        if f is None:
+            f0 = 8264548364
+            f = h5py.File("dati.h5", 'w')
+        else:
+            f0 = None
 
         f1 = f.create_group("montel_footprint")
 
-
-        f1.attrs['NX_class'] = 'NXdata'
-        f1.attrs['signal'] = b'z1'
-        f1.attrs['axes'] = b'x1'
+        #f1.attrs['NX_class'] = 'NXdata'
+        #f1.attrs['signal'] = b'z1'
+        #f1.attrs['axes'] = b'x1'
 
         f1["i"] = range(0, len(x3))
         f1["unos"] = unos
@@ -755,7 +1128,7 @@ class CompoundOpticalElement(object):
         f1["x3"] = x3
         f1["y3"] = y3
         f1["z3"] = z3
-        f.close()
+        #f.close()
 
         indices = np.where(tros==3)
 
@@ -802,7 +1175,8 @@ class CompoundOpticalElement(object):
 
 
 
-        f = h5py.File("dati.h5",'a')
+        #f = h5py.File("dati.h5",'a')
+        #f = h5py.File(date, 'a')
 
         f1 = f.create_group("montel_good_rays")
 
@@ -813,44 +1187,28 @@ class CompoundOpticalElement(object):
         f1["yoe2"] = yoe2
         f1["zoe2"] = zoe2
 
-        f.close()
+        if f0 == 8264548364:
+            f.close()
 
-        indices1 = np.where(on_do == 1)
-        indices2 = np.where(on_do == 2)
+        #indices1 = np.where(on_do == 1)
+        #indices2 = np.where(on_do == 2)
 
-        if on_do[0] == 1:
-            axoe1 = x1[0]
-            ayoe1 = y1[0]
-            azoe2 = z2[0]
-            ayoe2 = y2[0]
-        elif on_do[0] == 2:
-            axoe1 = x2[0]
-            ayoe1 = y2[0]
-            azoe2 = z1[0]
-            ayoe2 = y1[0]
-
-
-
-        plt.figure()
-        plt.plot(yoe1[indices1], xoe1[indices1], 'r.')
-        plt.plot(yoe1[indices2], xoe1[indices2], 'b.')
-        plt.plot(ayoe1, axoe1, 'ko')
-        plt.title("footprint on oe1")
-        plt.xlabel('y')
-        plt.ylabel('x')
-
-        plt.figure()
-        plt.plot(yoe2[indices1], zoe2[indices1], 'r.')
-        plt.plot(yoe2[indices2], zoe2[indices2], 'b.')
-        plt.title("footprint on oe2")
-        plt.plot(ayoe2, azoe2, 'ko')
-        plt.xlabel('y')
-        plt.ylabel('z')
+        #if on_do[0] == 1:
+        #    axoe1 = x1[0]
+        #    ayoe1 = y1[0]
+        #    azoe2 = z2[0]
+        #    ayoe2 = y2[0]
+        #elif on_do[0] == 2:
+        #    axoe1 = x2[0]
+        #    ayoe1 = y2[0]
+        #    azoe2 = z1[0]
+        #    ayoe2 = y1[0]
 
 
 
     def velocity_wolter_microscope(self, beam):
 
+        print("VELOCITY_WOLTER_MICROSCOPE")
 
         ccc = self.oe[0].ccc_object.get_coefficients()
 
@@ -864,12 +1222,11 @@ class CompoundOpticalElement(object):
         beam.z = b2
         beam.z = - beam.z + np.sqrt(ae ** 2 - be ** 2)
 
-
+        print(np.sqrt(ae ** 2 - be ** 2))
 
         p = self.oe[0].p
         q = self.oe[0].q
-        print("ccc")
-        print(ccc,ccc[2]**-0.5,ccc[0]**-0.5)
+
         ae = ccc[2]**-0.5
         be = 1/np.sqrt(ccc[0])
         f = np.sqrt(ae**2-be**2)
@@ -901,14 +1258,21 @@ class CompoundOpticalElement(object):
         #beam.y = position.y
         #beam.z = position.z
 
-        t = (-v.x * beam.x - v.y * beam.y - v.z * beam.z) / (
-                v.x * beam.vx + v.y * beam.vy + v.z * beam.vz)
-        beam.x += beam.vx * t
-        beam.y += beam.vy * t
-        beam.z += beam.vz * t
+        #t = (-v.x * beam.x - v.y * beam.y - v.z * beam.z) / (
+        #        v.x * beam.vx + v.y * beam.vy + v.z * beam.vz)
+        #beam.x += beam.vx * t
+        #beam.y += beam.vy * t
+        #beam.z += beam.vz * t
+
 
 
         self.oe[0].set_parameters(p=0., q=0., theta=90*np.pi/180)
+
+        print("Position after transformation")
+        print(beam.x, beam.y, beam.z)
+
+        print("Velocity after transformation")
+        print(beam.vx, beam.vy, beam.vz)
 
 
 
@@ -937,3 +1301,103 @@ class CompoundOpticalElement(object):
         self.oe[0].output_frame_wolter(beam)
 
         return beam
+
+
+    def trace_new_montel(self, beam):
+
+        op_axis = Beam(1)
+        op_axis.set_point(0., 0., 0.)
+        op_axis.set_divergences_collimated()
+        beam = op_axis.merge(beam)
+
+        beam.y -= self.oe[0].p
+
+        origin = self.time_comparison(beam, elements=[1, 2, 3])
+        indices = np.where(origin == 1)
+        beam1 = beam.part_of_beam(indices)
+        indices = np.where(origin == 2)
+        beam2 = beam.part_of_beam(indices)
+        indices = np.where(origin == 3)
+        beam3 = beam.part_of_beam(indices)
+
+        origin0 = origin
+
+
+        if beam3.N != 0:
+            [beam3, t] = self.oe[2].intersection_with_optical_element(beam3)
+
+        beam1_list = [beam1.duplicate(), Beam(), Beam()]
+        beam2_list = [beam2.duplicate(), Beam(), Beam()]
+        beam3_list = [beam3.duplicate(), Beam(), Beam()]
+
+
+        origin1 = [1,2]
+        origin2 = [1,2]
+
+        print("First iteration")
+        print()
+
+        for i in range(0, 2):
+
+            if beam1_list[i].N != 0:
+                [beam1_list[i], t] = self.oe[0].intersection_with_optical_element(beam1_list[i])
+                self.oe[0].output_direction_from_optical_element(beam1_list[i])
+
+                origin = self.time_comparison(beam1_list[i], [2, 3])
+                origin1[i] = origin
+                indices = np.where(origin == 2)
+                beam2_list[i + 1] = beam1_list[i].part_of_beam(indices)
+                indices = np.where(origin == 3)
+                beam03 = beam1_list[i].part_of_beam(indices)
+            else:
+                beam2_list[i+1] = Beam(0)
+                beam03 = Beam(0)
+
+            if beam2_list[i].N != 0:
+                [beam2_list[i], t] = self.oe[1].intersection_with_optical_element(beam2_list[i])
+                self.oe[1].output_direction_from_optical_element(beam2_list[i])
+
+                origin = self.time_comparison(beam2_list[i], [1, 3])
+                origin2[i] = origin
+                indices = np.where(origin == 1)
+                beam1_list[i + 1] = beam2_list[i].part_of_beam(indices)
+                indices = np.where(origin == 3)
+                beam003 = beam2_list[i].part_of_beam(indices)
+            else:
+                beam1_list[i+1] = Beam(0)
+                beam003 = Beam(0)
+
+
+            beam3_list[i + 1] = beam03.merge(beam003)
+
+        #beam_a = beam1_list[2].merge(beam2_list[2])
+        #beam3_list[2] = beam_a.merge(beam3_list[2])
+
+
+
+        print("To understand the reflection")
+        print(beam1_list[0].N, beam1_list[1].N, beam1_list[2].N)
+        print(beam2_list[0].N, beam2_list[1].N, beam2_list[2].N)
+        print(beam3_list[0].N, beam3_list[1].N, beam3_list[2].N)
+
+        velocity = Vector(beam3_list[2].vx, beam3_list[2].vy, beam3_list[2].vz)
+        alpha = np.arctan(velocity.x[0]/velocity.y[0])
+        velocity.rotation(alpha, 'z')
+        beta = np.arctan(velocity.z[0]/velocity.y[0])
+        velocity.rotation(-beta, 'x')
+        beam3_list[2].vx = velocity.x
+        beam3_list[2].vy = velocity.y
+        beam3_list[2].vz = velocity.z
+
+
+
+
+        position = Vector(beam3_list[2].x, beam3_list[2].y, beam3_list[2].z)
+        position.rotation(alpha, 'z')
+        position.rotation(-beta, 'x')
+        beam3_list[2].x = position.x
+        beam3_list[2].y = position.y
+        beam3_list[2].z = position.z
+
+
+        return beam3_list

@@ -6,7 +6,7 @@ from monwes.SurfaceConic import SurfaceConic
 from monwes.Vector import Vector
 import numpy as np
 import matplotlib.pyplot as plt
-import Shadow
+#import Shadow
 
 ##################  Instruction #######################
 # The different possible choises are:
@@ -23,7 +23,7 @@ import Shadow
 
 
 
-main = "__montel__ellipsoidal__"
+main = "__montel__paraboloid__"
 theta = 88.281*np.pi/180
 
 def shadow_source():
@@ -62,8 +62,8 @@ def shadow_source():
     oe0.PH1 = 9137.65
     oe0.VDIV1 = 0.00075
     oe0.VDIV2 = 0.00075
-    oe0.WXSOU = 0.0003
-    oe0.WZSOU = 0.00015
+    oe0.WXSOU =  0.0003
+    oe0.WZSOU =  0.00015
 
     # Run SHADOW to create the source
 
@@ -75,7 +75,6 @@ def shadow_source():
     if iwrite:
         oe0.write("end.00")
         beam.write("begin.dat")
-
     return beam
 
 def beam():
@@ -191,6 +190,9 @@ if main == "__montel__ellipsoidal__":
 
     beam = beam()
 
+    beam.plot_xpzp(0)
+    beam.plot_xz(0)
+
 
 
     xmax = 0.
@@ -209,7 +211,7 @@ if main == "__montel__ellipsoidal__":
 
     beam_1 = montel_1.trace_montel(beam)[2]
 
-    beam_1.plot_xz()
+    beam_1.plot_xpzp(0)
     plt.plot(beam_1.x[0], beam_1.z[0], 'ko')
     plt.title('Plot of a the first montel ellipsoidal system')
 
@@ -239,6 +241,40 @@ if main == "__montel__ellipsoidal__":
     plt.plot(beam_2_04.vx[0]*1e6, beam_2_04.vz[0]*1e6, 'ko')
     plt.title('Final velocity plot of a montel ellipsoidal with parameter = 0.4')
 
+    #shadow
+    shadow_beam = Shadow.Beam(beam_2_04.N)
+
+    shadow_beam.rays[:,0] = beam_2_04.x
+    shadow_beam.rays[:,1] = beam_2_04.y
+    shadow_beam.rays[:,2] = beam_2_04.z
+    shadow_beam.rays[:,3] = beam_2_04.vx
+    shadow_beam.rays[:,4] = beam_2_04.vy
+    shadow_beam.rays[:,5] = beam_2_04.vz
+
+    shadow_beam.rays[:, 6]  = np.zeros(beam_2_04.N) + 1.0
+    shadow_beam.rays[:, 7]  = np.zeros(beam_2_04.N) + 0.0
+    shadow_beam.rays[:, 8]  = np.zeros(beam_2_04.N) + 0.0
+    shadow_beam.rays[:, 9]  = np.zeros(beam_2_04.N) + 1.0 # beam_2_04.flag
+    shadow_beam.rays[:, 10] = np.zeros(beam_2_04.N) + 1e-8
+    shadow_beam.rays[:, 11] = np.arange(beam_2_04.N) + 1
+
+    shadow_beam.rays[:, 12] = np.zeros(beam_2_04.N) + 0.0
+    shadow_beam.rays[:, 13] = np.zeros(beam_2_04.N) + 0.0
+    shadow_beam.rays[:, 14] = np.zeros(beam_2_04.N) + 0.0
+    shadow_beam.rays[:, 15] = np.zeros(beam_2_04.N) + 0.0
+    shadow_beam.rays[:, 16] = np.zeros(beam_2_04.N) + 0.0
+    shadow_beam.rays[:, 17] = np.zeros(beam_2_04.N) + 0.0
+
+
+
+    shadow_beam.write("beam_2_04.sha")
+
+
+    shadow_beam2 = Shadow.Beam()
+    shadow_beam2.load("beam_2_04.sha")
+    #Shadow.ShadowTools.plotxy(shadow_beam2, 1, 3)
+
+
 
 
     beam_2_14 = montel_2_14.trace_montel(beam_2_14)[2]
@@ -246,10 +282,10 @@ if main == "__montel__ellipsoidal__":
 
     beam_2_14.plot_xz()
     plt.plot(beam_2_14.x[0], beam_2_14.z[0], 'ko')
-    plt.title('Final space plot of a montel ellipsoidal with parameter = 0.4')
+    plt.title('Final space plot of a montel ellipsoidal with parameter = 1.471')
     beam_2_14.plot_xpzp()
     plt.plot(beam_2_14.vx[0]*1e6, beam_2_14.vz[0]*1e6, 'ko')
-    plt.title('Final velocity plot of a montel ellipsoidal with parameter = 0.4')
+    plt.title('Final velocity plot of a montel ellipsoidal with parameter = 1.471')
 
     plt.show()
 
@@ -257,10 +293,18 @@ if main == "__montel__ellipsoidal__":
 
 if main == "__montel__paraboloid__":
 
-    beam = beam()
+    #beam = beam()
+
+    beam = Beam(5000)
+    beam.set_flat_divergence(1e-4, 1e-5)
+    beam.set_rectangular_spot(xmax=1e-3, xmin=-1e-3, zmax=1e-4, zmin=-1e-4)
+
 
     print("dx at the starting beam = %g\nIn the ideal cacse at the end of the system dx = %g" %(max(beam.x)-min(beam.x),max(beam.x)-min(beam.x)*1.471/0.4))
-
+    beam.plot_xpzp(0)
+    plt.title("Initial divergence")
+    beam.plot_xz(0)
+    plt.title("Initial dimension")
 
     xmax = 0.
     xmin = -100.
@@ -280,6 +324,7 @@ if main == "__montel__paraboloid__":
     plt.title('Plot of a the first montel ellipsoidal system')
 
     beam_1.plot_xpzp()
+    plt.title('Plot of a the divrgence first montel ellipsoidal system')
 
     beam_2_04 = beam_1.duplicate()
     beam_2_14 = beam_1.duplicate()
@@ -298,8 +343,13 @@ if main == "__montel__paraboloid__":
     print("dx after 1.471 system = %g\n" %(max(beam_2_14.x)-min(beam_2_14.x)))
 
 
-    beam_2_04.plot_xz()
+    beam_2_04.plot_xz(0)
     plt.plot(beam_2_04.x[0], beam_2_04.z[0], 'ko')
+    plt.title('Final plot of a montel paraboloid with parameter = 0.4')
+
+    beam_2_04.retrace(1.)
+
+    beam_2_04.plot_xz(0)
     plt.title('Final plot of a montel paraboloid with parameter = 0.4')
 
     beam_2_14.plot_xz()

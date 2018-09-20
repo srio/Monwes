@@ -119,9 +119,9 @@ class Vector(object):
         axis = axis1.duplicate()
         axis.normalization()
         vrot=Vector(self.x,self.y,self.z)
-        vrot.x=self.x*np.cos(theta)+( axis.y*self.z-axis.z*self.y)*np.sin(theta)+(1-np.cos(theta))*axis.x**2*self.x
-        vrot.y=self.y*np.cos(theta)+(-axis.x*self.z+axis.z*self.x)*np.sin(theta)+(1-np.cos(theta))*axis.y**2*self.y
-        vrot.z=self.z*np.cos(theta)+( axis.x*self.y-axis.y*self.x)*np.sin(theta)+(1-np.cos(theta))*axis.z**2*self.z
+        vrot.x=self.x*np.cos(theta)+( axis.y*self.z-axis.z*self.y)*np.sin(theta)+(1-np.cos(theta))*axis.x*(axis.x*self.x+axis.y*self.y+axis.z*self.z)
+        vrot.y=self.y*np.cos(theta)+(-axis.x*self.z+axis.z*self.x)*np.sin(theta)+(1-np.cos(theta))*axis.y*(axis.x*self.x+axis.y*self.y+axis.z*self.z)
+        vrot.z=self.z*np.cos(theta)+( axis.x*self.y-axis.y*self.x)*np.sin(theta)+(1-np.cos(theta))*axis.z*(axis.x*self.x+axis.y*self.y+axis.z*self.z)
 
         indices = np.where(np.abs(mod)>1e-13)
         vrot.normalization()

@@ -8,150 +8,219 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 from scipy.stats import norm
-import os
+import time
+import h5py
+from srxraylib.plot.gol import plot_scatter
 
-main = "__Moretti__"
+main = "__Moretti_2__"
+
 
 
 def theta():
 
     p = 0.23e-3
     f = 0.23e-3/2
-    xp = 0.012908941406853667
-    yp = 0.3622625396643068
+    xp = 0.0127046
+    yp = 0.350885
     m = xp/p
 
 
     v = Vector(xp, yp-f, 0.)
     v.normalization()
-    t = Vector(1., m, 0.)
+    t = Vector(xp/p, -1, 0.)
     t.normalization()
 
-    print((np.pi/2 - np.arccos(v.dot(t)))*180./np.pi)
+    print((np.arccos(v.dot(t)))*180./np.pi)
 
-    return np.pi/2 - np.arccos(v.dot(t))
-
-
+    return np.arccos(v.dot(t))
 
 
 
-if main == "__Moretti__":
 
-    beam1 = Beam()
-    beam1.set_rectangular_spot(xmax=0.5e-6, xmin=-0.5e-6, zmax=0.5e-6, zmin=-0.5e-6)
+
+
+
+if main == "__Moretti_1__":
+
+    beam1 = Beam(1e6)
+    #beam1.set_gaussian_spot(1 / (2 * np.sqrt(2 * np.log(2))) * 1e-6, 1 / (2 * np.sqrt(2 * np.log(2))) * 1e-6)
+    #beam1.set_rectangular_spot(xmax=0.5e-6, xmin=-0.5e-6, zmax=0.5e-6, zmin=-0.5e-6)
     beam1.set_gaussian_divergence(25. / (2 * np.sqrt(2 * np.log(2))) * 1e-6, 25. / (2 * np.sqrt(2 * np.log(2))) * 1e-6)
 
-    xmax = 0.
-    xmin = -0.4
+    xmax = 0.01
+    xmin = -0.01
     ymax = 0.150
     ymin = -0.150
-    zmax = 0.4
-    zmin = 0.
+    zmax = 0.1
+    zmin = -0.1
 
     bound = BoundaryRectangle(xmax=xmax, xmin=xmin, ymax=ymax, ymin=ymin, zmax=zmax, zmin=zmin)
-    dvx = [Beam(), Beam(), Beam(), Beam(), Beam(), Beam()]
-    bem = [Beam(), Beam(), Beam(), Beam(), Beam(), Beam()]
-    area = [Beam(), Beam(), Beam(), Beam(), Beam(), Beam()]
+    dvx = [Beam(), Beam(), Beam(), Beam(), Beam()]
+    bem = [Beam(), Beam(), Beam(), Beam(), Beam()]
+    area = [Beam(), Beam(), Beam(), Beam(), Beam()]
 
-    bins_list = [1, 2, 3, 4, 5, 6]
-    y_list = [1, 2, 3, 4, 5, 6]
+    bins_list = [1, 2, 3, 4, 5]
+    y_list = [1, 2, 3, 4, 5]
+
+    date = "dati/Moretti/" + "M.Moretti  " + time.strftime("%d-%m-%y at %H:%M:%S") + ".h5"
+
+    f = h5py.File(date, 'w')
+    f.close()
+
+    Nn = 7
 
 
-    for i in range (6):
+    for i in range (Nn):
+
 
         beam = beam1.duplicate()
-        alpha = -0.03 + 0.01 * i
+        alpha = round(-0.03 + 0.01 * i , 3)
+        print(alpha)
+
+
+
+        f = h5py.File(date, 'a')
+        f1 = f.create_group(str(alpha))
+
         montel =  CompoundOpticalElement.initialize_as_montel_parabolic(p=0.351, q=1., theta=theta(), bound1=bound, bound2=bound, angle_of_mismatch=alpha)
-        beam = montel.trace_montel(beam)
-        dvx[i] = beam[2].vx * 1e6
-        bem[i] = beam[2]
-
-        #bvx = dvx[i] / np.sum(dvx[i])
-        area[i] = beam[2].N
-
-        (mu, sigma) = norm.fit(dvx[i])
-        n, bins , patches = plt.hist(dvx[i], 50)
-        plt.title(alpha*-1)
-        y = mlab.normpdf(bins, mu, sigma)
-
-        bins_list[i] = bins
-        y_list[i] = y
-
-        plt.close()
+        beam = montel.trace_montel(beam,f1)
 
 
+        f1["Number of rays"] = beam[2].N
+        f1["x"] = beam[2].x
+        f1["y"] = beam[2].y
+        f1["z"] = beam[2].z
+        f1["vx"] = beam[2].vx
+        f1["vy"] = beam[2].vy
+        f1["vz"] = beam[2].vz
 
-    plt.figure()
-    plt.plot(bins_list[0], y_list[0]*area[0], 'r')
-    plt.plot(bins_list[1], y_list[1]*area[1], 'b')
-    plt.plot(bins_list[2], y_list[2]*area[2], 'g')
-    plt.plot(bins_list[3], y_list[3]*area[3], 'k')
-    plt.plot(bins_list[4], y_list[4]*area[4], 'y')
-    plt.plot(bins_list[5], y_list[5]*area[5], 'c')
-    plt.legend([0.03,0.02,0.01,0.00,-0.01,-0.02])
-
-    plt.figure()
-    plt.hist(dvx[0], histtype='step', normed=0, color='r')
-    plt.hist(dvx[1], histtype='step', normed=0, color='b')
-    plt.hist(dvx[2], histtype='step', normed=0, color='g')
-    plt.hist(dvx[3], histtype='step', normed=0, color='k')
-    plt.hist(dvx[4], histtype='step', normed=0, color='y')
-    plt.hist(dvx[5], histtype='step', normed=0, color='c')
-    plt.legend([0.03,0.02,0.01,0.00,-0.01,-0.02])
+        f.close()
 
 
+    #beam = beam1.duplicate()
+    #alpha = 9.600000
+    #print(alpha)
 
-    plt.figure()
-    plt.plot(bem[0].vx, bem[0].vz, 'r.')
-    plt.title("vx/vz plot of 0.03 degree")
+    #f = h5py.File(date, 'a')
+    #f1 = f.create_group(str(alpha))
 
-    plt.figure()
-    plt.plot(bem[1].vx, bem[1].vz, 'b.')
-    plt.title("vx/vz plot of 0.02 degree")
+    #montel = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.351, q=1., theta=theta(), bound1=bound,
+    #                                                               bound2=bound, angle_of_mismatch=alpha)
+    #beam = montel.trace_montel(beam, f1)
 
-    plt.figure()
-    plt.plot(bem[2].vx, bem[2].vz, 'g.')
-    plt.title("vx/vz plot of 0.01 degree")
+    #f1["Number of rays"] = beam[2].N
+    #f1["x"] = beam[2].x
+    #f1["y"] = beam[2].y
+    #f1["z"] = beam[2].z
+    #f1["vx"] = beam[2].vx
+    #f1["vy"] = beam[2].vy
+    #f1["vz"] = beam[2].vz
 
-    plt.figure()
-    plt.plot(bem[3].vx, bem[3].vz, 'k.')
-    plt.title("vx/vz plot of 0.00 degree")
-
-    plt.figure()
-    plt.plot(bem[4].vx, bem[4].vz, 'y.')
-    plt.title("vx/vz plot of -0.01 degree")
-
-    plt.figure()
-    plt.plot(bem[5].vx, bem[5].vz, 'c.')
-    plt.title("vx/vz plot of -0.02 degree")
-
-
-
-
-    plt.figure()
-    plt.plot(bem[0].x, bem[0].z, 'r.')
-    plt.title("x/z plot of 0.03 degree")
-
-    plt.figure()
-    plt.plot(bem[1].x, bem[1].z, 'b.')
-    plt.title("x/z plot of 0.02 degree")
-
-    plt.figure()
-    plt.plot(bem[2].x, bem[2].z, 'g.')
-    plt.title("x/z plot of 0.01 degree")
-
-    plt.figure()
-    plt.plot(bem[3].x, bem[3].z, 'k.')
-    plt.title("x/z plot of 0.00 degree")
-
-    plt.figure()
-    plt.plot(bem[4].x, bem[4].z, 'y.')
-    plt.title("x/z plot of -0.01 degree")
-
-    plt.figure()
-    plt.plot(bem[5].x, bem[5].z, 'c.')
-    plt.title("x/z plot of -0.02 degree")
-
+    #f.close()
 
 
     plt.show()
+
+
+if main == '__Moretti_2__':
+
+    dim = 0.5e-6
+
+    for ii in range (0,1):
+
+        vf = 25
+
+        print("The value of divergence fwhm is %f" %vf)
+
+        beam1 = Beam()
+        #beam1.set_gaussian_spot(dim / (2 * np.sqrt(2 * np.log(2))) * 1e-6, dim / (2 * np.sqrt(2 * np.log(2))) * 1e-6)
+        #beam1.set_gaussian_divergence(vf / (2 * np.sqrt(2 * np.log(2))) * 1e-6, 25 / (vf * np.sqrt(2 * np.log(2))) * 1e-6)
+
+        #beam1 = Beam()
+        #beam1.set_rectangular_spot(xmax=0.5e-6, xmin=-0.5e-6, zmax=0.5e-6, zmin=-0.5e-6)
+        #beam1.set_circular_spot(1e-6/np.pi)
+        beam1.set_gaussian_divergence(vf
+
+
+                                      * 1e-6, vf / (2 * np.sqrt(2 * np.log(2))) * 1e-6)
+
+
+
+        alpha_initial = -0.02
+        alpha_step = 0.0005
+
+        print("alpha initial = %f, alpha step = %f" %(alpha_initial, alpha_step))
+
+
+        xmax = 0.01
+        xmin = -0.01
+        ymax = 0.150
+        ymin = -0.150
+        zmax = 0.01
+        zmin = -0.01
+
+        bound = BoundaryRectangle(xmax=xmax, xmin=xmin, ymax=ymax, ymin=ymin, zmax=zmax, zmin=zmin)
+        dvx = [Beam(), Beam(), Beam(), Beam(), Beam()]
+        bem = [Beam(), Beam(), Beam(), Beam(), Beam()]
+        area = [Beam(), Beam(), Beam(), Beam(), Beam()]
+
+        bins_list = [1, 2, 3, 4, 5]
+        y_list = [1, 2, 3, 4, 5]
+
+        date = "dati/Moretti/" + "M.Moretti  " + time.strftime("%d-%m-%y at %H:%M:%S") + ".h5"
+
+        f = h5py.File(date, 'w')
+        f.close()
+
+        Nn = 80
+
+
+        ####### zero angle  #################################################################################################
+
+        f = h5py.File(date, 'a')
+
+        beam = beam1.duplicate()
+        print(beam.N)
+        f1 = f.create_group(str(0.00))
+        montel = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.351, q=1., theta=theta(), bound1=bound,
+                                                                       bound2=bound, angle_of_mismatch=0.0)
+        beam = montel.trace_montel(beam, f1)
+        f1["Number of rays"] = beam[2].N
+        f1["x"] = beam[2].x
+        f1["y"] = beam[2].y
+        f1["z"] = beam[2].z
+        f1["vx"] = beam[2].vx
+        f1["vy"] = beam[2].vy
+        f1["vz"] = beam[2].vz
+        f.close()
+
+        ####################################################################################################################
+
+
+        for i in range(Nn):
+            beam = beam1.duplicate()
+            alpha = round(alpha_initial+ alpha_step * i, 5)
+
+            if abs(alpha) > 1e-13:
+                print(alpha)
+
+                f = h5py.File(date, 'a')
+                f1 = f.create_group(str(alpha))
+
+                montel = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.351, q=1., theta=theta(), bound1=bound,
+                                                                               bound2=bound, angle_of_mismatch=alpha)
+
+
+                beam = montel.trace_montel(beam, f1)
+
+                f1["Number of rays"] = beam[2].N
+                f1["x"] = beam[2].x
+                f1["y"] = beam[2].y
+                f1["z"] = beam[2].z
+                f1["vx"] = beam[2].vx
+                f1["vy"] = beam[2].vy
+                f1["vz"] = beam[2].vz
+
+                f.close()
+
+
