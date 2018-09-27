@@ -14,6 +14,7 @@ if main == "__main__":
     beam1.x *= 50.
     beam1.z *= 50.
     beam1.set_point(p, 0., p)
+    beam1.plot_xz()
     op_ax = Beam(1)
     op_ax.set_point(p, 0., p)
     beam = op_ax.merge(beam1)
@@ -22,7 +23,7 @@ if main == "__main__":
 
     p = 1e12
     R = 100.
-    theta = 1e-3 * np.pi / 180
+    theta=0.001*np.pi/180
 
     wolter1 = CompoundOpticalElement.initialiaze_as_wolter_1_with_two_parameters(p1=p, R=R, theta=theta)
 
@@ -32,8 +33,14 @@ if main == "__main__":
     indices = np.where(beam.flag >= 0)
 
     beam.retrace(100.)
-    beam.plot_good_xz()
+    beam.plot_good_xz(0)
     plt.title("optimezed_wolter1_good_rays")
+
+    print(beam.vx, beam.vy, beam.vz)
+
+
+    print(np.arctan(beam.vz[0]/beam.vy[0]) * 180. / np.pi)
+    print(wolter1.type)
 
     if do_plot:
         plt.show()

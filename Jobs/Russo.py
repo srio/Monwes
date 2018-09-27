@@ -6,7 +6,7 @@ from monwes.SurfaceConic import SurfaceConic
 from monwes.Vector import Vector
 import numpy as np
 import matplotlib.pyplot as plt
-#import Shadow
+import Shadow
 
 ##################  Instruction #######################
 # The different possible choises are:
@@ -204,7 +204,7 @@ if main == "__montel__ellipsoidal__":
 
     bound = BoundaryRectangle(xmax=xmax, xmin=xmin, ymax=ymax, ymin=ymin, zmax=zmax, zmin=zmin)
 
-    montel_1 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.4, q=0.3, theta=theta,
+    montel_1 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.4, q=0.3, theta_z=theta,
                                                                      bound1=bound,
                                                                      bound2=bound, fp=0.4,
                                                                      fq=10000000.)
@@ -223,10 +223,10 @@ if main == "__montel__ellipsoidal__":
     beam_2_14 = beam_1.duplicate()
 
 
-    montel_2_04 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.3, q=0.4, theta=theta,
+    montel_2_04 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.3, q=0.4, theta_z=theta,
                                                                      bound1=bound, bound2=bound, fp=1000000000., fq=0.4)
 
-    montel_2_14 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.3, q=1.471, theta=88.281 * np.pi / 180,
+    montel_2_14 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.3, q=1.471, theta_z=88.281 * np.pi / 180,
                                                                      bound1=bound, bound2=bound,
                                                                      fp=1000000000., fq=1.471)
 
@@ -293,14 +293,15 @@ if main == "__montel__ellipsoidal__":
 
 if main == "__montel__paraboloid__":
 
-    #beam = beam()
+    mode = 1
+    beam = beam()
 
-    beam = Beam(5000)
-    beam.set_flat_divergence(1e-4, 1e-5)
-    beam.set_rectangular_spot(xmax=1e-3, xmin=-1e-3, zmax=1e-4, zmin=-1e-4)
+    #beam = Beam(5000)
+    #beam.set_flat_divergence(1e-4, 1e-5)
+    #beam.set_rectangular_spot(xmax=1e-3, xmin=-1e-3, zmax=1e-4, zmin=-1e-4)
 
 
-    print("dx at the starting beam = %g\nIn the ideal cacse at the end of the system dx = %g" %(max(beam.x)-min(beam.x),max(beam.x)-min(beam.x)*1.471/0.4))
+    #print("dx at the starting beam = %g\nIn the ideal cacse at the end of the system dx = %g" %(max(beam.x)-min(beam.x),max(beam.x)-min(beam.x)*1.471/0.4))
     beam.plot_xpzp(0)
     plt.title("Initial divergence")
     beam.plot_xz(0)
@@ -315,9 +316,9 @@ if main == "__montel__paraboloid__":
 
     bound = BoundaryRectangle(xmax=xmax, xmin=xmin, ymax=ymax, ymin=ymin, zmax=zmax, zmin=zmin)
 
-    montel_1 = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.4, q=0.3, theta=theta, bound1=bound, bound2=bound, infinity_location='q')
+    montel_1 = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.4, q=0.3, theta_z=theta, infinity_location='q')
 
-    beam_1 = montel_1.trace_montel(beam)[2]
+    beam_1 = montel_1.trace_montel(beam, mode=mode)[2]
 
     beam_1.plot_xz()
     plt.plot(beam_1.x[0], beam_1.z[0], 'ko')
@@ -330,27 +331,23 @@ if main == "__montel__paraboloid__":
     beam_2_14 = beam_1.duplicate()
 
 
-    montel_2_04 = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.3, q=0.4, theta=theta, bound1=bound, bound2=bound, infinity_location='p')
+    montel_2_04 = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.3, q=0.4, theta_z=theta, infinity_location='p')
 
-    montel_2_14 = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.3, q=1.471, theta=theta, bound1=bound, bound2=bound, infinity_location='p')
-
-
-    beam_2_04 = montel_2_04.trace_montel(beam_2_04)[2]
-    beam_2_14 = montel_2_14.trace_montel(beam_2_14)[2]
+    montel_2_14 = CompoundOpticalElement.initialize_as_montel_parabolic(p=0.3, q=1.471, theta_z=theta, infinity_location='p')
 
 
-    print("dx after 0.4 system = %g\n" %(max(beam_2_04.x)-min(beam_2_04.x)))
-    print("dx after 1.471 system = %g\n" %(max(beam_2_14.x)-min(beam_2_14.x)))
+    beam_2_04 = montel_2_04.trace_montel(beam_2_04, mode=mode)[2]
+    beam_2_14 = montel_2_14.trace_montel(beam_2_14, mode=mode)[2]
+
+
+    #print("dx after 0.4 system = %g\n" %(max(beam_2_04.x)-min(beam_2_04.x)))
+    #print("dx after 1.471 system = %g\n" %(max(beam_2_14.x)-min(beam_2_14.x)))
 
 
     beam_2_04.plot_xz(0)
     plt.plot(beam_2_04.x[0], beam_2_04.z[0], 'ko')
     plt.title('Final plot of a montel paraboloid with parameter = 0.4')
 
-    beam_2_04.retrace(1.)
-
-    beam_2_04.plot_xz(0)
-    plt.title('Final plot of a montel paraboloid with parameter = 0.4')
 
     beam_2_14.plot_xz()
     plt.plot(beam_2_14.x[0], beam_2_14.z[0], 'ko')

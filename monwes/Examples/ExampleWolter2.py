@@ -41,11 +41,16 @@ if main == "__main__":
 
     beam.plot_good_xz()
 
+    print("pollo")
+    print(beam.x, beam.y, beam.z)
+
     beam.retrace(10.)
     beam.plot_good_xz()
     plt.title("test_wolter2_good_rays")
 
     print(beam.flag)
 
+
+    print(beam.vx, beam.vy, beam.vz)
     if do_plot:
         plt.show()

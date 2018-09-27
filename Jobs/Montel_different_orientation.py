@@ -102,7 +102,7 @@ if __name__ == '__main__':
         beam.plot_xpzp(0)
         plt.title('Initial source divergence')
 
-        montel = CompoundOpticalElement.initialize_as_montel_parabolic(p=p, q=q, theta=theta,
+        montel = CompoundOpticalElement.initialize_as_montel_parabolic(p=p, q=q, theta_z=theta,
                                                                        infinity_location='q', bound1=bound,
                                                                        bound2=bound)
 

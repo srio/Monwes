@@ -409,10 +409,32 @@ class Optical_element(object):
 
 
 
-        if np.abs(np.mean(t1-t_source) >= np.abs(np.mean(t2-t_source))):
-            t=t1
+        #if np.abs(np.mean(t1-t_source) >= np.abs(np.mean(t2-t_source))):
+        #    print("sx")
+        #    t=t1
+        #else:
+        #    print("sx")
+        #    t=t2
+
+
+
+
+        a = np.mean(t1)
+        b = np.mean(t2)
+
+        if np.mean(t1) > 0 and np.mean(t2) > 0:
+            if a < b:
+                t = t1
+            else:
+                t = t2
+        elif np.mean(t1) < 0 and np.mean(t2) > 0:
+           t = t2
+        elif np.mean(t1) > 0 and np.mean(t2) < 0:
+            t = t1
+        elif np.abs(np.mean(t1)) < np.abs(np.mean(t2)):
+            t = t1
         else:
-            t=t2
+            t = t2
 
 
         beam.counter = 1
@@ -522,231 +544,6 @@ class Optical_element(object):
 
 
 
-    def output_frame_wolter(self,beam):
-
-        indices = np.where(beam.flag>=0)
-
-        #tx = np.mean(beam.vx[indices])
-        #ty = np.mean(beam.vy[indices])
-        #tz = np.mean(beam.vz[indices])
-        tx = beam.vx[0]
-        ty = beam.vy[0]
-        tz = beam.vz[0]
-        #test_ray = Vector(np.mean(beam.vx[indices]), np.mean(beam.vy[indices]), np.mean(beam.vz)[indices])
-        test_ray = Vector(tx, ty, tz)
-        #test_ray = Vector(beam.vx[0], beam.vy[0], beam.vz[0])
-        velocity = Vector (beam.vx, beam.vy, beam.vz)
-        test_ray.normalization()
-
-        s = 0.00000000000000000000000000000000000000000000000000000000001
-        t = 2.
-        if np.abs(test_ray.x) < 1e-2 and np.abs(test_ray.y) < 1e-2:
-            print("1")
-            ort = Vector(s, 0, 0.)
-        elif np.abs(test_ray.z) < 1e-2 and np.abs(test_ray.y) < 1e-2:
-            print("2")
-            ort = Vector(0., s, 0)
-        elif np.abs(test_ray.x) < 1e-2 and np.abs(test_ray.z) < 1e-2:
-            print("3")
-            ort = Vector(s, 0., 0.)
-        elif np.abs(test_ray.x) < 1e-10:
-            print("4")
-            ort = Vector(s, t, -test_ray.y / test_ray.z * t)
-        elif np.abs(test_ray.y) < 1e-10:
-            print("5")
-            ort = Vector(t, s, -test_ray.x / test_ray.z * t)
-        elif np.abs(test_ray.z) < 1e-10:
-            print("6")
-            ort = Vector(t, -test_ray.x / test_ray.y * t, s)
-        else:
-            print("last possibility")
-            ort = Vector(s, t, -(test_ray.x * s + test_ray.y * t) / test_ray.z)
-
-        ort.normalization()
-
-        if np.abs(test_ray.x) < 1e-2 and np.abs(test_ray.y) < 1e-2:
-            print("1")
-            perp = Vector(0., 1., 0.)
-        elif np.abs(test_ray.z) < 1e-2 and np.abs(test_ray.y) < 1e-2:
-            print("2")
-            perp = Vector(0., 0., 1.)
-        elif np.abs(test_ray.x) < 1e-2 and np.abs(test_ray.z) < 1e-2:
-            print("3")
-            perp = Vector(0., 0., 1.)
-        elif np.abs(test_ray.x) < 1e-10:
-            print("4")
-            t = s*ort.z/(test_ray.x/test_ray.y*ort.y-ort.x)
-            perp = Vector(s, t, -test_ray.y / test_ray.z * t)
-        elif np.abs(test_ray.y) < 1e-10:
-            print("5")
-            t = s*ort.y/(test_ray.x/test_ray.z*ort.z-ort.x)
-            perp = Vector(t, s, -test_ray.x / test_ray.z * t)
-        elif np.abs(test_ray.z) < 1e-10:
-            print("6")
-            t = s*ort.x/(test_ray.y/test_ray.z*ort.z-ort.y)
-            perp = Vector(t, -test_ray.x / test_ray.y * t, s)
-        else:
-            print("last possibility")
-            t = s*(ort.z*test_ray.x/test_ray.z-ort.x)/(ort.y-ort.z*test_ray.y/test_ray.z)
-            perp = Vector(s, t, -(test_ray.x * s + test_ray.y * t) / test_ray.z)
-
-        perp.normalization()
-
-        print("Optical axis information")
-        print(test_ray.info())
-
-        beam.x -= np.mean(beam.x)
-        beam.y -= np.mean(beam.y)
-        beam.z -= np.mean(beam.z)
-
-
-        beam.x -= np.mean(beam.x)
-        beam.y -= np.mean(beam.y)
-        beam.z -= np.mean(beam.z)
-
-
-        t = (-test_ray.x * beam.x - test_ray.y * beam.y - test_ray.z * beam.z) / (
-                test_ray.x * beam.vx + test_ray.y * beam.vy + test_ray.z * beam.vz)
-        beam.x += beam.vx * t
-        beam.y += beam.vy * t
-        beam.z += beam.vz * t
-
-        position = Vector(beam.x, beam.y, beam.z)
-
-        x = position.dot(ort)
-        y = position.dot(test_ray)
-        z = position.dot(perp)
-
-        beam.x = x
-        beam.y = y
-        beam.z = z
-
-        velocity = Vector(beam.vx, beam.vy, beam.vz)
-
-        vx = velocity.dot(ort)
-        vy = velocity.dot(test_ray)
-        vz = velocity.dot(perp)
-
-        beam.vx = vx
-        beam.vy = vy
-        beam.vz = vz
-
-
-    def new_output_frame_montel(self,beam):
-
-        op_axis = Vector(beam.vx[0], beam.vy[0], beam.vz[0])
-        op_position = Vector(beam.x[0], beam.y[0], beam.z[0])
-        #op_axis = Vector(np.mean(beam.vx), np.mean(beam.vy), np.mean(beam.vz))
-
-        z0 = Vector(0., 0., 1.)
-
-        x1 = op_axis.vector_product(z0)
-        x1.normalization()
-
-        z1 = x1.vector_product(op_axis)
-        z1.normalization()
-
-        #beam.x -= np.mean(beam.x)
-        #beam.y -= np.mean(beam.y)
-        #beam.z -= np.mean(beam.z)
-
-        beam.x -= op_position.x
-        beam.y -= op_position.y
-        beam.z -= op_position.z
-
-        t = (-op_axis.x * beam.x - op_axis.y * beam.y - op_axis.z * beam.z) / (
-                op_axis.x * beam.vx + op_axis.y * beam.vy + op_axis.z * beam.vz)
-        beam.x += beam.vx * t
-        beam.y += beam.vy * t
-        beam.z += beam.vz * t
-
-        position = Vector(beam.x, beam.y, beam.z)
-
-        x = position.dot(x1)
-        y = position.dot(op_axis)
-        z = position.dot(z1)
-
-        beam.x = x
-        beam.y = y
-        beam.z = z
-
-        velocity = Vector(beam.vx, beam.vy, beam.vz)
-
-        vx = velocity.dot(x1)
-        vy = velocity.dot(op_axis)
-        vz = velocity.dot(z1)
-
-        beam.vx = vx
-        beam.vy = vy
-        beam.vz = vz
-
-        print(op_axis.info())
-
-
-
-    def new2_output_frame_montel(self,beam,n):
-
-        op_axis = Vector(beam.vx[0], beam.vy[0], beam.vz[0])
-        op_axis = Vector(np.mean(beam.vx), np.mean(beam.vy), np.mean(beam.vz))
-        y = Vector(0., 1., 0.,)
-        z = Vector(0., 0., 1.)
-
-
-
-        theta12 = self.theta
-        theta12 = np.pi/2 - theta12
-
-        op_axis = op_axis.rodrigues_formula(n, theta12)
-        op_axis.rotation(theta12, 'x')
-
-        theta2 = np.arccos(op_axis.dot(z))
-        k = op_axis.vector_product(z)
-        w = op_axis.rodrigues_formula(axis1=k, theta=-(np.pi/2-theta2))
-        fi = np.arccos(w.dot(y))
-        w.rotation(angle=-fi, axis='z')
-
-        op_position = Vector(beam.x[0], beam.y[0], beam.z[0])
-        #op_position = Vector(np.mean(beam.x), np.mean(beam.y), np.mean(beam.z))
-
-        beam.x -= op_position.x
-        beam.y -= op_position.y
-        beam.z -= op_position.z
-
-        t = (-op_axis.x * beam.x - op_axis.y * beam.y - op_axis.z * beam.z) / (
-                op_axis.x * beam.vx + op_axis.y * beam.vy + op_axis.z * beam.vz)
-
-        beam.x += beam.vx * t
-        beam.y += beam.vy * t
-        beam.z += beam.vz * t
-
-
-        velocity = Vector(beam.vx, beam.vy, beam.vz)
-        position = Vector(beam.x, beam.y, beam.z)
-
-        velocity = velocity.rodrigues_formula(n, theta12)
-        velocity.rotation(theta12, 'x')
-        w = velocity.rodrigues_formula(axis1=k, theta=-(np.pi / 2 - theta2))
-        w.rotation(angle=-fi, axis='z')
-        w.normalization()
-
-        beam.vx = w.x
-        beam.vy = w.y
-        beam.vz = w.z
-
-
-        position = position.rodrigues_formula(n, theta12)
-        position.rotation(theta12, 'x')
-        w = position.rodrigues_formula(axis1=k, theta=-(np.pi / 2 - theta2))
-        w.rotation(angle=-fi, axis='z')
-
-        beam.x = w.x
-        beam.y = w.y
-        beam.z = w.z
-
-
-
-
-
 
     def trace_ideal_lens(self,beam1):
 
@@ -775,6 +572,8 @@ class Optical_element(object):
         beam.x = beam.x + beam.vx * t
         beam.y = beam.y + beam.vy * t
         beam.z = beam.z + beam.vz * t
+
+        beam.y *= 0.
 
         return beam
 

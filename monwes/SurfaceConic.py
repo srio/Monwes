@@ -557,6 +557,7 @@ class SurfaceConic(object):
         # ;;		AFOCI = 0.5D0*SQRT( SSOUR^2 + SIMAG^2 - 2*SSOUR*SIMAG*COS(2*THETA) )
         AXMIN = numpy.sqrt( AFOCI**2 - AXMAJ**2 )
 
+
         ECCENT = AFOCI / numpy.abs( AXMAJ )
 
         BRANCH = -1.0   #; branch=+1,-1
@@ -570,7 +571,7 @@ class SurfaceConic(object):
         # ;ENDELSE
 
         if AXMAJ>0:
-            YCEN = (SSOUR - AXMAJ) / ECCENT
+            YCEN = - (SSOUR - AXMAJ) / ECCENT
         else:
             YCEN = (SSOUR - AXMAJ) / ECCENT
 
@@ -644,6 +645,7 @@ class SurfaceConic(object):
         self.ccc[8] = 2 * (B * YCEN * RNCEN[2-1] + C * ZCEN * RNCEN[3-1])
         self.ccc[9] = 0.0
 
+        #self.ccc[8] = 2 * (B * YCEN * RNCEN[2-1] + C * ZCEN * RNCEN[3-1])
 
         #self.ccc[0] = -0.0111673
         #self.ccc[1] = -0.005

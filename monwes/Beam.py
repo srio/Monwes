@@ -7,7 +7,7 @@ from monwes.Vector import Vector
 
 class Beam(object):
 
-    def __init__(self,N=10000):
+    def __init__(self,N=25000):
 
         N = round(N)
 

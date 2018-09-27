@@ -3,6 +3,8 @@ from monwes.Shape import BoundaryRectangle
 import numpy as np
 import matplotlib.pyplot as plt
 from monwes.CompoundOpticalElement import CompoundOpticalElement
+import h5py
+from srxraylib.plot.gol import plot_scatter
 
 do_plot = True
 main = "__main__"
@@ -37,23 +39,19 @@ if main == "__main__":
 
 
     montel = CompoundOpticalElement.initialize_as_montel_parabolic(p=p, q=q, theta_z=theta, bound1=bound1, bound2=bound2, distance_of_the_screen=q)
-    beam1, beam2, beam03 = montel.trace_montel(beam)
-
-    print(beam03[2].N/25000)
-
-    plt.figure()
-    plt.plot(beam03[0].x, beam03[0].z, 'ro', markersize=0.2)
-    plt.plot(beam03[1].x, beam03[1].z, 'bo', markersize=0.2)
-    plt.plot(beam03[2].x, beam03[2].z, 'go', markersize=0.2)
-    plt.xlabel('x axis')
-    plt.ylabel('z axis')
-    plt.axis('equal')
-
-    beam03[2].plot_xz(0)
-    plt.title('final')
-
-    print("No reflection = %d\nOne reflection = %d\nTwo reflection = %d" %(beam03[0].N, beam03[1].N, beam03[2].N))
-    print("dx = %f" %(max(beam03[2].x)-min(beam03[2].x)))
+    beam1, beam2, beam03 = montel.trace_montel(beam, name_file= 'polletto', print_footprint=0)
 
 
-    plt.show()
+
+    f = h5py.File('polletto' + '.h5', 'r')
+    n = np.ones(1)
+    f['montel_good_rays/Number of rays'].read_direct(n)
+    n = int(n[0])
+    x1 = np.ones(n)
+    y1 = np.ones(n)
+    f['montel_good_rays/xoe1'].read_direct(x1)
+    f['montel_good_rays/yoe1'].read_direct(y1)
+    f.close()
+
+
+    plot_scatter(y1*1e3, x1*1e3, title="footprint on oe1", xtitle='y[mm]', ytitle='x[mm]')

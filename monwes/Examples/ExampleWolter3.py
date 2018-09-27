@@ -14,7 +14,8 @@ if main == "__main__":
 
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   example_wolter3")
 
-    p=50.
+    p = 50.
+    q = 5.
     beam1 = Beam.initialize_as_person()
     beam1.set_point(p, 0., p)
     #beam1.set_rectangular_spot(5 / 2 * 1e-5, -5 / 2 * 1e-5, 5 / 2 * 1e-5, -5 / 2 * 1e-5)
@@ -29,7 +30,7 @@ if main == "__main__":
 
     distance_between_the_foci = 10.
 
-    wolter3 = CompoundOpticalElement.initialize_as_wolter_3(20., 5., distance_between_the_foci)
+    wolter3 = CompoundOpticalElement.initialize_as_wolter_3(p, q, distance_between_the_foci)
 
     print(wolter3.oe[0].ccc_object.get_coefficients())
     print(wolter3.oe[1].ccc_object.get_coefficients())
@@ -42,5 +43,7 @@ if main == "__main__":
 
     beam.retrace(0.1)
     beam.plot_xz()
+
+    print(beam.vx, beam.vy, beam.vz)
 
     plt.show()
