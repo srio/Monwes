@@ -550,6 +550,7 @@ class CompoundOpticalElement(object):
         # beam2: are the rays that will first hit oe2
         # beam3: are the rays that doesn't hit any mirror
 
+
         origin = self.time_comparison(beam, elements=[1, 2, 3])
         indices = np.where(origin == 1)
         beam1 = beam.part_of_beam(indices)

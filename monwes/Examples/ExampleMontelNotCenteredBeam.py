@@ -39,7 +39,7 @@ if main == "__main__":
 
 
     montel = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=p, q=q, theta_z=theta, bound1=bound1, bound2=bound2)
-    beam1, beam2, beam03 = montel.trace_montel(beam, hitting_point=Vector(-0.0004, 0.004, 0.))
+    beam1, beam2, beam03 = montel.trace_montel(beam, hitting_point=Vector(-0.0003, 0.004, 0.))
 
     beam03[2].plot_xz(0)
     plt.title("final plot of two reflection rays")

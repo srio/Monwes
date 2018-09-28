@@ -16,7 +16,7 @@ if main == "__main__":
     beam = Beam(1e5)
     beam.set_flat_divergence(25*1e-6, 25*1e-6)
     #beam.set_rectangular_spot(xmax=25*1e-6, xmin=-25*1e-6, zmax=5*1e-6, zmin=-5*1e-6)
-    beam.set_gaussian_divergence(25*1e-6, 25*1e-6)
+    beam.set_gaussian_divergence(25*1e-4, 25*1e-4)
 
 
 
