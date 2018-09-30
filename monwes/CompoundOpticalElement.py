@@ -539,7 +539,7 @@ class CompoundOpticalElement(object):
 
 
 
-    def apply_specular_reflections(self, beam, name_file, print_footprint):
+    def apply_specular_reflections(self, beam, name_file, do_plot_footprint=False):
 
         # This is the core of the tracing algoritm
 
@@ -623,7 +623,8 @@ class CompoundOpticalElement(object):
         print(beam3_list[0].N, beam3_list[1].N, beam3_list[2].N)
 
         self.print_file_montel(beam_1=beam1_list, beam_2=beam2_list, beam_3=beam3_list, origin0=origin0,
-                               origin1=origin1, origin2=origin2, name_file=name_file, print_footprint=print_footprint)
+                               origin1=origin1, origin2=origin2, name_file=name_file,
+                               do_plot_footprint=do_plot_footprint)
 
         return  beam1_list, beam2_list, beam3_list
 
@@ -676,7 +677,8 @@ class CompoundOpticalElement(object):
 
 
 
-    def trace_montel(self, beam, name_file=None, mode=0, p=None, q=None, theta_z=None, theta_x=None, hitting_point=Vector(0., 0., 0.), output_frame=0., print_footprint=1):
+    def trace_montel(self, beam, name_file=None, mode=0, p=None, q=None, theta_z=None, theta_x=None,
+                     hitting_point=Vector(0., 0., 0.), output_frame=0., do_plot_footprint=False):
 
 
         #
@@ -694,7 +696,8 @@ class CompoundOpticalElement(object):
         self.input_frame(beam, v_in, mode, hitting_point)
 
 
-        beam1, beam2, beam3 = self.apply_specular_reflections(beam, name_file, print_footprint)
+        beam1, beam2, beam3 = self.apply_specular_reflections(beam, name_file,
+                                    do_plot_footprint=do_plot_footprint)
 
         if output_frame == 0:
             v_out = self.get_optical_axis_out(mode)
@@ -706,13 +709,13 @@ class CompoundOpticalElement(object):
         self.output_frame(beam3[2], v_out, mode)
 
 
-
         return beam1, beam2, beam3
 
 
 
 
-    def print_file_montel(self,beam_1, beam_2, beam_3, origin0, origin1, origin2, name_file, print_footprint):
+    def print_file_montel(self,beam_1, beam_2, beam_3, origin0, origin1, origin2, name_file,
+                          do_plot_footprint=False):
 
         unos = origin0
 
@@ -801,7 +804,7 @@ class CompoundOpticalElement(object):
 
             import h5py
 
-            f = h5py.File(name_file + '.h5','w')
+            f = h5py.File(name_file,'w')
 
             #f.attrs['NX_class'] = 'NXentry'
             #f.attrs['default'] = 'montel_footprint'
@@ -892,7 +895,7 @@ class CompoundOpticalElement(object):
 
             f.close()
 
-        if print_footprint == 1:
+        if do_plot_footprint:
             self.print_footprin(on_do=on_do, xoe1=xoe1, yoe1=yoe1, zoe2=zoe2, yoe2=yoe2)
 
 

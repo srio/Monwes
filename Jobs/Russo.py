@@ -2,10 +2,10 @@ from monwes.Beam import Beam
 from monwes.OpticalElement import Optical_element
 from monwes.CompoundOpticalElement import CompoundOpticalElement
 from monwes.Shape import BoundaryRectangle
-from monwes.SurfaceConic import SurfaceConic
-from monwes.Vector import Vector
+
 import numpy as np
 import matplotlib.pyplot as plt
+
 import Shadow
 
 ##################  Instruction #######################
@@ -75,29 +75,6 @@ def shadow_source():
     if iwrite:
         oe0.write("end.00")
         beam.write("begin.dat")
-    return beam
-
-def beam():
-
-    shadow_beam = shadow_source()
-
-    beam = Beam(25000)
-    beam.initialize_from_arrays(
-        shadow_beam.getshonecol(1),
-        shadow_beam.getshonecol(2),
-        shadow_beam.getshonecol(3),
-        shadow_beam.getshonecol(4),
-        shadow_beam.getshonecol(5),
-        shadow_beam.getshonecol(6),
-        shadow_beam.getshonecol(10),
-    )
-
-    beam.flag *= 0.
-
-
-    beam.plot_xz(0)
-    plt.title('starting beam')
-
     return beam
 
 
@@ -188,12 +165,13 @@ if main == "__paraboloid__":
 
 if main == "__montel__ellipsoidal__":
 
-    beam = beam()
+    do_plot = True
 
-    beam.plot_xpzp(0)
-    beam.plot_xz(0)
+    beam = Beam.initialize_from_shadow_beam(shadow_source())
 
-
+    if do_plot:
+        beam.plot_xz(0,title="source size")
+        beam.plot_xpzp(0,title="source divergences")
 
     xmax = 0.
     xmin = -100.
@@ -209,12 +187,13 @@ if main == "__montel__ellipsoidal__":
                                                                      bound2=bound, fp=0.4,
                                                                      fq=10000000.)
 
-    beam_n, beam_m, beam_1 = montel_1.trace_montel(beam)[2]
+    #TODO force geometrical p and q
+    beam_n, beam_m, beam_1 = montel_1.trace_montel(beam,do_plot_footprint=do_plot,name_file="tmp.h5")[2]
 
-    beam_1.plot_xpzp(0)
-    plt.title('Plot of a the first montel ellipsoidal system')
 
-    beam_1.plot_xpzp()
+    if do_plot:
+        beam_1.plot_xpzp(equal_axis=0,title='Plot of a the first montel ellipsoidal system')
+
 
 
 
@@ -223,60 +202,32 @@ if main == "__montel__ellipsoidal__":
 
 
     montel_2_04 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.3, q=0.4, theta_z=theta,
-                                                                     bound1=bound, bound2=bound, fp=1000000000., fq=0.4)
+                                        bound1=bound, bound2=bound,
+                                        fp=1000000000., fq=0.4)
 
     montel_2_14 = CompoundOpticalElement.initialize_as_montel_ellipsoid(p=0.3, q=1.471, theta_z=88.281 * np.pi / 180,
-                                                                     bound1=bound, bound2=bound,
-                                                                     fp=1000000000., fq=1.471)
-
-    beam_n, beam_m, beam_2_04 = montel_2_04.trace_montel(beam_2_04)[2]
-
-
-    beam_2_04.plot_xz()
-    plt.title('Final space plot of a montel ellipsoidal with parameter = 0.4')
-    beam_2_04.plot_xpzp()
-    plt.title('Final velocity plot of a montel ellipsoidal with parameter = 0.4')
-
-    #shadow
-    shadow_beam = Shadow.Beam(beam_2_04.N)
-
-    shadow_beam.rays[:,0] = beam_2_04.x
-    shadow_beam.rays[:,1] = beam_2_04.y
-    shadow_beam.rays[:,2] = beam_2_04.z
-    shadow_beam.rays[:,3] = beam_2_04.vx
-    shadow_beam.rays[:,4] = beam_2_04.vy
-    shadow_beam.rays[:,5] = beam_2_04.vz
-
-    shadow_beam.rays[:, 6]  = np.zeros(beam_2_04.N) + 1.0
-    shadow_beam.rays[:, 7]  = np.zeros(beam_2_04.N) + 0.0
-    shadow_beam.rays[:, 8]  = np.zeros(beam_2_04.N) + 0.0
-    shadow_beam.rays[:, 9]  = np.zeros(beam_2_04.N) + 1.0 # beam_2_04.flag
-    shadow_beam.rays[:, 10] = np.zeros(beam_2_04.N) + 1e-8
-    shadow_beam.rays[:, 11] = np.arange(beam_2_04.N) + 1
-
-    shadow_beam.rays[:, 12] = np.zeros(beam_2_04.N) + 0.0
-    shadow_beam.rays[:, 13] = np.zeros(beam_2_04.N) + 0.0
-    shadow_beam.rays[:, 14] = np.zeros(beam_2_04.N) + 0.0
-    shadow_beam.rays[:, 15] = np.zeros(beam_2_04.N) + 0.0
-    shadow_beam.rays[:, 16] = np.zeros(beam_2_04.N) + 0.0
-    shadow_beam.rays[:, 17] = np.zeros(beam_2_04.N) + 0.0
+                                        bound1=bound, bound2=bound,
+                                        fp=1000000000., fq=1.471)
 
 
 
-    shadow_beam.write("beam_2_04.sha")
+    beam_n, beam_m, beam_2_04 = montel_2_04.trace_montel(beam_2_04,do_plot_footprint=do_plot)[2]
+    #
+    #
+    if do_plot:
+        beam_2_04.plot_xz(title='Final space plot of a montel ellipsoidal with parameter = 0.4')
+        beam_2_04.plot_xpzp(title='Final velocity plot of a montel ellipsoidal with parameter = 0.4')
+
+    # shadow_beam = beam_2_04.get_shadow_beam()
 
 
-    shadow_beam2 = Shadow.Beam()
-    shadow_beam2.load("beam_2_04.sha")
-    #Shadow.ShadowTools.plotxy(shadow_beam2, 1, 3)
+    beam_n, beam_m, beam_2_14 = montel_2_14.trace_montel(beam_2_14,do_plot_footprint=do_plot)[2]
 
-    beam_n, beam_m, beam_2_14 = montel_2_14.trace_montel(beam_2_14)[2]
-
-
-    beam_2_14.plot_xz()
-    plt.title('Final space plot of a montel ellipsoidal with parameter = 1.471')
-    beam_2_14.plot_xpzp()
-    plt.title('Final velocity plot of a montel ellipsoidal with parameter = 1.471')
+    if do_plot:
+        beam_2_14.plot_xz()
+        plt.title('Final space plot of a montel ellipsoidal with parameter = 1.471')
+        beam_2_14.plot_xpzp()
+        plt.title('Final velocity plot of a montel ellipsoidal with parameter = 1.471')
 
     plt.show()
 

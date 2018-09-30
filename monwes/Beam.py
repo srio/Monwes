@@ -76,6 +76,59 @@ class Beam(object):
 
         return beam
 
+    @classmethod
+    def initialize_from_shadow_beam(cls,shadow_beam):
+
+        beam = Beam()
+        beam.initialize_from_arrays(
+            shadow_beam.getshonecol(1),
+            shadow_beam.getshonecol(2),
+            shadow_beam.getshonecol(3),
+            shadow_beam.getshonecol(4),
+            shadow_beam.getshonecol(5),
+            shadow_beam.getshonecol(6),
+            shadow_beam.getshonecol(10),
+        )
+
+        beam.flag *= 0.
+
+        return beam
+
+    def get_shadow_beam(self):
+
+        import Shadow
+
+        shadow_beam = Shadow.Beam(self.N)
+
+        shadow_beam.rays[:,0] = self.x
+        shadow_beam.rays[:,1] = self.y
+        shadow_beam.rays[:,2] = self.z
+        shadow_beam.rays[:,3] = self.vx
+        shadow_beam.rays[:,4] = self.vy
+        shadow_beam.rays[:,5] = self.vz
+
+        shadow_beam.rays[:, 6]  =  np.zeros(self.N) + 1.0
+        shadow_beam.rays[:, 7]  =  np.zeros(self.N) + 0.0
+        shadow_beam.rays[:, 8]  =  np.zeros(self.N) + 0.0
+        shadow_beam.rays[:, 9]  =  np.zeros(self.N) + 1.0 # beam_2_04.flag
+        shadow_beam.rays[:, 10] =  np.zeros(self.N) + 1e-8
+        shadow_beam.rays[:, 11] = np.arange(self.N) + 1
+
+        shadow_beam.rays[:, 12] = np.zeros(self.N) + 0.0
+        shadow_beam.rays[:, 13] = np.zeros(self.N) + 0.0
+        shadow_beam.rays[:, 14] = np.zeros(self.N) + 0.0
+        shadow_beam.rays[:, 15] = np.zeros(self.N) + 0.0
+        shadow_beam.rays[:, 16] = np.zeros(self.N) + 0.0
+        shadow_beam.rays[:, 17] = np.zeros(self.N) + 0.0
+
+        # shadow_beam.write("beam_2_04.sha")
+        # shadow_beam2 = Shadow.Beam()
+        # shadow_beam2.load("beam_2_04.sha")
+        # Shadow.ShadowTools.plotxy(shadow_beam2, 1, 3)
+
+        return shadow_beam
+
+
     def set_point(self,x,y,z):
 
         self.x = x + self.x
@@ -271,11 +324,12 @@ class Beam(object):
     #
     #  graphics
     #
-    def plot_xz(self,equal_axis=1, color='r', marker='.', markersize=0.2):
+    def plot_xz(self,equal_axis=1, color='r', marker='.', markersize=0.2, title=""):
         plt.figure()
         plt.plot(self.x, self.z,color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('x axis')
         plt.ylabel('z axis')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
@@ -284,84 +338,94 @@ class Beam(object):
         plt.plot(self.x, self.y,color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('x axis')
         plt.ylabel('y axis')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_zy(self,equal_axis=1, color='r', marker='.', markersize=0.2):
+    def plot_zy(self,equal_axis=1, color='r', marker='.', markersize=0.2, title=""):
         plt.figure()
         plt.plot(self.z, self.y,color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('z axis')
         plt.ylabel('y axis')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_yx(self,equal_axis=1, color='r', marker='.', markersize=0.2):
+    def plot_yx(self,equal_axis=1, color='r', marker='.', markersize=0.2, title=""):
         plt.figure()
         plt.plot(self.y, self.x,color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('y axis')
         plt.ylabel('x axis')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_xpzp(self,equal_axis=1, color='b', marker='.', markersize=0.2):
+    def plot_xpzp(self,equal_axis=1, color='b', marker='.', markersize=0.2, title=""):
         plt.figure()
         plt.plot(1e6*self.vx, 1e6*self.vz,color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('xp axis [urad]')
         plt.ylabel('zp axis [urad]')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_ypzp(self,equal_axis=1, color='b', marker='.', markersize=0.2):
+    def plot_ypzp(self,equal_axis=1, color='b', marker='.', markersize=0.2, title=""):
         plt.figure()
         plt.plot(1e6*self.vy, 1e6*self.vz, color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('yp axis [urad]')
         plt.ylabel('zp axis [urad]')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
 
-    def plot_good_xz(self,equal_axis=1, color='r', marker='.', markersize=0.2):
+    def plot_good_xz(self,equal_axis=1, color='r', marker='.', markersize=0.2, title=""):
         plt.figure()
         indices = np.where(self.flag >= 0)
         plt.plot(self.x[indices], self.z[indices], color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('x axis')
         plt.ylabel('z axis')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_good_xy(self,equal_axis=1, color='r', marker='.', markersize=0.2):
+    def plot_good_xy(self,equal_axis=1, color='r', marker='.', markersize=0.2, title=""):
         indices = np.where(self.flag >= 0)
         plt.figure()
         plt.plot(self.x[indices], self.y[indices],color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('x axis')
         plt.ylabel('y axis')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_good_zy(self,equal_axis=1, color='r', marker='.', markersize=0.2):
+    def plot_good_zy(self,equal_axis=1, color='r', marker='.', markersize=0.2, title=""):
         indices = np.where(self.flag >= 0)
         plt.figure()
         plt.plot(self.z[indices], self.y[indices], color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('z axis')
         plt.ylabel('y axis')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_good_yx(self,equal_axis=1, color='r', marker='.', markersize=0.2):
+    def plot_good_yx(self,equal_axis=1, color='r', marker='.', markersize=0.2, title=""):
         indices = np.where(self.flag >= 0)
         plt.figure()
         plt.plot(self.y[indices], self.x[indices], color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('y axis')
         plt.ylabel('x axis')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
-    def plot_good_xpzp(self,equal_axis=1, color='b', marker='.', markersize=0.2):
+    def plot_good_xpzp(self,equal_axis=1, color='b', marker='.', markersize=0.2, title=""):
         indices = np.where(self.flag >= 0)
         plt.figure()
         plt.plot(1e6*self.vx[indices], 1e6*self.vz[indices], color=color, marker=marker, markersize=markersize, linestyle='None')
         plt.xlabel('xp axis [urad]')
         plt.ylabel('zp axis [urad]')
+        plt.title(title)
         if equal_axis==1:
             plt.axis('equal')
 
