@@ -50,8 +50,8 @@ def shadow_source():
     oe0.FDISTR = 1
     oe0.FSOUR = 1
     oe0.F_PHOT = 0
-    oe0.HDIV1 = 0.005
-    oe0.HDIV2 = 0.005
+    oe0.HDIV1 = 0.00075
+    oe0.HDIV2 = 0.00075
     oe0.IDO_VX = 0
     oe0.IDO_VZ = 0
     oe0.IDO_X_S = 0
@@ -165,9 +165,10 @@ if main == "__paraboloid__":
 
 if main == "__montel__ellipsoidal__":
 
-    do_plot = True
+    do_plot = False
 
-    beam = Beam.initialize_from_shadow_beam(shadow_source())
+    shadow3_beam = shadow_source()
+    beam = Beam.initialize_from_shadow_beam(shadow3_beam)
 
     if do_plot:
         beam.plot_xz(0,title="source size")
@@ -187,12 +188,13 @@ if main == "__montel__ellipsoidal__":
                                                                      bound2=bound, fp=0.4,
                                                                      fq=10000000.)
 
+    print(montel_1.info())
     #TODO force geometrical p and q
     beam_n, beam_m, beam_1 = montel_1.trace_montel(beam,do_plot_footprint=do_plot,name_file="tmp.h5")[2]
 
-
     if do_plot:
-        beam_1.plot_xpzp(equal_axis=0,title='Plot of a the first montel ellipsoidal system')
+        beam_1.plot_xpzp(equal_axis=0,title='Plot DIV of a the first montel ellipsoidal system')
+        beam_1.plot_xz(equal_axis=0,title='Plot SIZES of a the first montel ellipsoidal system')
 
 
 

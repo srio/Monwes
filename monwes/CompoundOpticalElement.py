@@ -612,7 +612,6 @@ class CompoundOpticalElement(object):
                 beam1_list[i+1] = Beam(0)
                 beam003 = Beam(0)
 
-
             beam3_list[i + 1] = beam03.merge(beam003)
 
 

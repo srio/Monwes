@@ -27,6 +27,10 @@ class Beam(object):
 
         self.N = N
 
+        self.indices = np.arange(self.N)
+
+        self.aux = np.zeros(N)
+
 
     @classmethod
     def initialize_as_person(cls, N=10000):
@@ -71,6 +75,8 @@ class Beam(object):
         f["/vy"].read_direct(beam.vy)
         f["/vz"].read_direct(beam.vz)
         f["/flag"].read_direct(beam.flag)
+        f["/indices"].read_direct(beam.indices)
+        f["/aux"].read_direct(beam.aux)
 
         f.close()
 
@@ -91,6 +97,7 @@ class Beam(object):
         )
 
         beam.flag *= 0.
+        beam.aux = shadow_beam.rays[:,10] # wavenumber
 
         return beam
 
@@ -136,7 +143,7 @@ class Beam(object):
         self.z = z + self.z
 
 
-    def initialize_from_arrays(self, x,y,z,vx,vy,vz,flag):
+    def initialize_from_arrays(self, x,y,z,vx,vy,vz,flag,indices=None,aux=None):
 
         self.x = x
         self.y = y
@@ -150,6 +157,16 @@ class Beam(object):
 
         self.N = x.size
 
+        if indices is None:
+            self.indices = np.arange(self.N)
+        else:
+            self.indices=indices
+
+        if aux is None:
+            self.aux = np.zeros(self.N)
+        else:
+            self.aux = aux
+
 
     def duplicate(self):
         b = Beam(N=self.N)
@@ -160,6 +177,8 @@ class Beam(object):
                                  self.vy.copy(),
                                  self.vz.copy(),
                                  self.flag.copy(),
+                                 self.indices.copy(),
+                                 self.aux.copy(),
                                  )
         return b
 
@@ -174,6 +193,8 @@ class Beam(object):
         beam.vy= self.vy[indices].copy()
         beam.vz= self.vz[indices].copy()
         beam.flag= self.flag[indices].copy()
+        beam.indices= self.indices[indices].copy()
+        beam.aux= self.aux[indices].copy()
 
         print("Good beam indices")
         print(indices)
@@ -191,6 +212,8 @@ class Beam(object):
         beam.vy= self.vy[indices].copy()
         beam.vz= self.vz[indices].copy()
         beam.flag= self.flag[indices].copy()
+        beam.indices= self.indices[indices].copy()
+        beam.aux= self.aux[indices].copy()
 
         return beam
 
@@ -276,6 +299,8 @@ class Beam(object):
         beam_out.vy[0:self.N] = self.vy
         beam_out.vz[0:self.N] = self.vz
         beam_out.flag[0:self.N] = self.flag
+        beam_out.indices[0:self.N] = self.indices
+        beam_out.aux[0:self.N] = self.aux
 
         beam_out.x[self.N:self.N+beam.N] = beam.x
         beam_out.y[self.N:self.N+beam.N] = beam.y
@@ -284,6 +309,7 @@ class Beam(object):
         beam_out.vy[self.N:self.N+beam.N] = beam.vy
         beam_out.vz[self.N:self.N+beam.N] = beam.vz
         beam_out.flag[self.N:self.N+beam.N] = beam.flag
+        beam_out.aux[self.N:self.N+beam.N] = beam.aux
 
 
         return beam_out
@@ -317,6 +343,8 @@ class Beam(object):
         f["vy"] = self.vy
         f["vz"] = self.vz
         f["flag"] = self.flag
+        f["indices"] = self.indices
+        f["aux"] = self.aux
 
         f.close()
 
